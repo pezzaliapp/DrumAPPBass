@@ -53,6 +53,19 @@
         </div>
         <input type="range" id="swingSlider" min="0" max="75" value="0" class="tempo__slider" aria-label="Swing">
       </div>
+
+      <div class="mixer" aria-label="Master mixer drum e bass">
+        <div class="mixer__channel">
+          <span class="mixer__label">DRUM</span>
+          <input type="range" id="drumBusSlider" class="mixer__slider" min="0" max="100" value="90" title="Master drum — doppio click per default 90">
+          <span class="mixer__val" id="drumBusVal">90</span>
+        </div>
+        <div class="mixer__channel mixer__channel--bass">
+          <span class="mixer__label">BASS</span>
+          <input type="range" id="bassBusSlider" class="mixer__slider" min="0" max="100" value="80" title="Master bass — doppio click per default 80">
+          <span class="mixer__val" id="bassBusVal">80</span>
+        </div>
+      </div>
     </header>
 
     <!-- ================= ACTIVE TRACK PANEL (drum) ================= -->
@@ -379,6 +392,14 @@
               <li><strong>FILTER</strong> LP/HP + <strong>CUTOFF</strong> — tipico filter-sweep durante build-up</li>
               <li><strong>M</strong> mute · <strong>S</strong> solo (anche da tastiera: <kbd>M</kbd> <kbd>S</kbd> sulla traccia attiva)</li>
             </ul>
+            <h4 style="margin-top:1rem">🎚 MASTER MIXER (nell'header in alto a destra)</h4>
+            <p>Due slider verticali compatti sopra il sequencer:</p>
+            <ul class="help__list">
+              <li><strong>MASTER DRUM</strong> (default 90) — livello complessivo della somma delle 8 tracce drum, prima del master globale. Tutte le tracce drum passano per un <em>drumBus</em> comune.</li>
+              <li><strong>MASTER BASS</strong> (default 80) — livello complessivo del basso (step + live loop), via <em>bassBus</em>.</li>
+              <li><strong>Doppio click</strong> su uno slider lo riporta al default.</li>
+            </ul>
+            <p>I due bus sono a <em>valle</em> di ogni traccia ma <em>a monte</em> del master globale, quindi vengono rispettati anche nel <strong>BOUNCE WAV</strong> offline e nel <strong>REC live</strong>. Sono persistiti nell'export JSON, negli slot localStorage e nello share link.</p>
           </section>
 
           <section class="help__sec help__sec--bass">

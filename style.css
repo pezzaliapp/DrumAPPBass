@@ -1346,6 +1346,75 @@ body::before {
 }
 
 /* ==============================================================
+   MASTER MIXER (drum / bass) — nell'header a destra della .tempo
+   ============================================================== */
+
+.mixer {
+  display: flex;
+  gap: 0.6rem;
+  align-items: stretch;
+  border-left: 2px dashed var(--paper-rule);
+  padding-left: 0.8rem;
+  margin-left: 0.2rem;
+}
+
+.mixer__channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+}
+
+.mixer__label {
+  font-family: var(--f-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.mixer__channel--bass .mixer__label {
+  color: var(--bass);
+}
+
+.mixer__slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 18px;
+  height: 80px;
+  margin: 0;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+.mixer__channel--bass .mixer__slider {
+  accent-color: var(--bass);
+}
+
+.mixer__val {
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .mixer {
+    border-left: none;
+    padding-left: 0.4rem;
+    margin-left: 0;
+    gap: 0.4rem;
+  }
+  .mixer__channel { min-width: 36px; }
+  .mixer__slider { height: 56px; width: 16px; }
+  .mixer__label { font-size: 0.6rem; }
+  .mixer__val { font-size: 0.72rem; }
+}
+
+/* ==============================================================
    BASS PANEL · step sequencer + looper + keyboard on-screen
    ============================================================== */
 

@@ -106,6 +106,16 @@
   let masterGain = null;
   let noiseBuffer = null;
 
+  // Bus intermedi: drumBus (somma delle 8 tracce drum) e bassBus (bass chain).
+  // Entrambi a valle di masterGain, così REC live e bounce li rispettano.
+  //   masterGain
+  //      ├── drumBus ← trackGains[i] (8)
+  //      └── bassBus ← bassGain
+  let drumBus = null;
+  let bassBus = null;
+  let drumBusLevel = 0.9;   // master drum 0-1 (default 0.9)
+  let bassBusLevel = 0.8;   // master bass 0-1 (default 0.8)
+
   // Catena audio per traccia
   let trackFilters = [];
   let trackGains = [];
@@ -258,13 +268,22 @@
       mediaRecDest = null;
     }
 
+    // Bus intermedi drum e bass, entrambi a valle di masterGain
+    drumBus = audioCtx.createGain();
+    drumBus.gain.value = drumBusLevel;
+    drumBus.connect(masterGain);
+
+    bassBus = audioCtx.createGain();
+    bassBus.gain.value = bassBusLevel;
+    bassBus.connect(masterGain);
+
     // Rumore bianco pregenerato, condiviso
     const len = audioCtx.sampleRate * 2;
     noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
 
-    // Catena per traccia: voice -> trackPanner[i] -> trackFilter[i] -> trackGain[i] -> masterGain
+    // Catena per traccia: voice -> trackPanner[i] -> trackFilter[i] -> trackGain[i] -> drumBus -> masterGain
     for (let i = 0; i < NUM_TRACKS; i++) {
       const pan = audioCtx.createStereoPanner
         ? audioCtx.createStereoPanner()
@@ -280,9 +299,9 @@
 
       if (pan) {
         pan.pan.value = trackParams[i].pan || 0;
-        pan.connect(f).connect(g).connect(masterGain);
+        pan.connect(f).connect(g).connect(drumBus);
       } else {
-        f.connect(g).connect(masterGain);
+        f.connect(g).connect(drumBus);
       }
 
       trackPanners.push(pan); // può essere null su browser vintage
@@ -312,10 +331,32 @@
       bassPanner.pan.value = bassParams.pan;
       bassPanner.connect(bassFilter);
     }
-    bassFilter.connect(bassDrive).connect(bassGain).connect(masterGain);
+    bassFilter.connect(bassDrive).connect(bassGain).connect(bassBus);
 
     applyTrackParams();
     applyBassParams();
+    applyMasterBuses();
+  }
+
+  /** Aggiorna i livelli dei bus drum e bass */
+  function applyMasterBuses() {
+    if (!audioCtx) return;
+    if (drumBus) drumBus.gain.setTargetAtTime(drumBusLevel, audioCtx.currentTime, 0.02);
+    if (bassBus) bassBus.gain.setTargetAtTime(bassBusLevel, audioCtx.currentTime, 0.02);
+  }
+
+  /** Aggiorna gli slider master nell'header in base allo stato */
+  function updateMasterMixerUI() {
+    const ds = document.getElementById('drumBusSlider');
+    const dv = document.getElementById('drumBusVal');
+    const bs = document.getElementById('bassBusSlider');
+    const bv = document.getElementById('bassBusVal');
+    const dVal = Math.round(drumBusLevel * 100);
+    const bVal = Math.round(bassBusLevel * 100);
+    if (ds) ds.value = dVal;
+    if (dv) dv.textContent = dVal;
+    if (bs) bs.value = bVal;
+    if (bv) bv.textContent = bVal;
   }
 
   /** Curva WaveShaper per il drive (soft clipping tipo tanh) */
@@ -1009,7 +1050,7 @@
   // 9) UNDO / REDO
   // ============================================================
   function snapshot() {
-    // Salva pattern + trackParams + stato bass
+    // Salva pattern + trackParams + stato bass + master buses
     return JSON.stringify({
       patterns,
       trackParams,
@@ -1018,6 +1059,8 @@
       bassLiveLoops,
       bassParams,
       bassMode,
+      masterDrum: drumBusLevel,
+      masterBass: bassBusLevel,
     });
   }
 
@@ -1041,9 +1084,12 @@
       if (s.bassLiveLoops) bassLiveLoops = s.bassLiveLoops;
       if (s.bassParams) bassParams = Object.assign({}, bassParams, s.bassParams);
       if (s.bassMode) bassMode = s.bassMode;
+      if (typeof s.masterDrum === 'number') drumBusLevel = s.masterDrum;
+      if (typeof s.masterBass === 'number') bassBusLevel = s.masterBass;
       refreshAllUI();
       applyTrackParams();
       applyBassParams();
+      applyMasterBuses();
     } catch (e) {
       showToast('Undo fallito', true);
     }
@@ -1328,6 +1374,7 @@
     document.getElementById('swingValue').textContent = swing + '%';
     document.getElementById('swingSlider').value = swing;
     document.getElementById('lengthSelect').value = patternLength;
+    updateMasterMixerUI();
     updateTrackControls();
     updatePatternButtons();
     updateActiveTrackPanel();
@@ -2359,6 +2406,8 @@
     return {
       version: 3,
       bpm, swing, patternLength, humanize,
+      masterDrum: drumBusLevel,
+      masterBass: bassBusLevel,
       trackParams,
       patterns,
       songSequence,
@@ -2387,6 +2436,9 @@
     if (typeof data.swing === 'number') swing = data.swing;
     if (typeof data.patternLength === 'number') patternLength = data.patternLength;
     if (typeof data.humanize === 'boolean') humanize = data.humanize;
+    // Master buses (backward compat v1/v2: defaults)
+    drumBusLevel = (typeof data.masterDrum === 'number') ? data.masterDrum : 0.9;
+    bassBusLevel = (typeof data.masterBass === 'number') ? data.masterBass : 0.8;
     if (Array.isArray(data.trackParams) && data.trackParams.length === NUM_TRACKS) {
       // Merge con default per backward compatibility (pan è recente)
       trackParams = data.trackParams.map(p => ({
@@ -2441,6 +2493,7 @@
     refreshAllUI();
     applyTrackParams();
     applyBassParams();
+    applyMasterBuses();
     return true;
   }
 
@@ -2571,7 +2624,10 @@
       }
       parts.push(bits.toString(16).padStart(4, '0'));
     }
-    const base = parts.join('-') + '-' + bpm.toString(16);
+    // Master drum/bass come 2 segmenti hex (valori 0-100 → max 2 char hex "64")
+    const md = Math.round(clamp(drumBusLevel, 0, 1) * 100).toString(16);
+    const mb = Math.round(clamp(bassBusLevel, 0, 1) * 100).toString(16);
+    const base = parts.join('-') + '-' + bpm.toString(16) + '-' + md + '-' + mb;
 
     // Bass: JSON base64 url-safe (solo step pattern corrente; il live loop
     // è performance, non va nello share).
@@ -2598,7 +2654,9 @@
     }
 
     const segs = hex.split('-');
-    if (segs.length !== NUM_TRACKS + 1) return false;
+    // Formato corrente: NUM_TRACKS + bpm + md + mb = NUM_TRACKS + 3
+    // Formato legacy: NUM_TRACKS + bpm = NUM_TRACKS + 1
+    if (segs.length < NUM_TRACKS + 1) return false;
     const newBpm = parseInt(segs[NUM_TRACKS], 16);
     if (isNaN(newBpm) || newBpm < 60 || newBpm > 200) return false;
 
@@ -2612,6 +2670,14 @@
     }
     bpm = newBpm;
     patterns[currentPattern] = newPattern;
+
+    // Master drum/bass (opzionali, backward compat)
+    if (segs.length >= NUM_TRACKS + 3) {
+      const md = parseInt(segs[NUM_TRACKS + 1], 16);
+      const mb = parseInt(segs[NUM_TRACKS + 2], 16);
+      if (!isNaN(md)) drumBusLevel = clamp(md / 100, 0, 1);
+      if (!isNaN(mb)) bassBusLevel = clamp(mb / 100, 0, 1);
+    }
 
     // Bass (opzionale, backward compat)
     if (bassPart) {
@@ -2627,13 +2693,16 @@
     }
 
     refreshAllUI();
+    applyMasterBuses();
     return true;
   }
 
   function shareLink() {
     const hex = packToHex();
     const url = `${location.origin}${location.pathname}#${hex}`;
-    history.replaceState(null, '', '#' + hex);
+    // Nota: `history` qui è la variabile locale (undo stack), non
+    // window.history. Usa il global esplicitamente.
+    try { window.history.replaceState(null, '', '#' + hex); } catch (e) { /* ignore */ }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url)
         .then(() => showToast('Link copiato'))
@@ -2732,6 +2801,14 @@
       master.gain.value = 0.75;
       master.connect(ctx.destination);
 
+      // Bus drum e bass anche nell'offline, così i master level sono rispettati
+      const drumBusOff = ctx.createGain();
+      drumBusOff.gain.value = drumBusLevel;
+      drumBusOff.connect(master);
+      const bassBusOff = ctx.createGain();
+      bassBusOff.gain.value = bassBusLevel;
+      bassBusOff.connect(master);
+
       const len = sr;
       const noise = ctx.createBuffer(1, len, sr);
       const nd = noise.getChannelData(0);
@@ -2746,15 +2823,15 @@
         else { f.type = p.filterType; f.frequency.value = 50 * Math.pow(360, p.filterCutoff); f.Q.value = p.filterQ; }
 
         const g = ctx.createGain();
-        const anySolo = trackParams.some(pp => pp.solo);
+        const anySolo = trackParams.some(pp => pp.solo) || bassParams.solo;
         g.gain.value = p.mute ? 0 : (anySolo && !p.solo ? 0 : p.volume);
 
         const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
         if (pan) {
           pan.pan.value = p.pan || 0;
-          pan.connect(f).connect(g).connect(master);
+          pan.connect(f).connect(g).connect(drumBusOff);
         } else {
-          f.connect(g).connect(master);
+          f.connect(g).connect(drumBusOff);
         }
         oFilters.push(f);
         oPanners.push(pan);
@@ -2762,8 +2839,8 @@
 
       const ofVoices = buildOfflineVoices(ctx, noise, oPanners.map((p, i) => p || oFilters[i]));
 
-      // Costruisci catena bass offline
-      const bassOut = buildOfflineBassChain(ctx, master);
+      // Costruisci catena bass offline agganciata a bassBusOff
+      const bassOut = buildOfflineBassChain(ctx, bassBusOff);
 
       // Schedula ogni pattern della sequenza, uno dopo l'altro
       sequence.forEach((patName, idxInSeq) => {
@@ -3313,6 +3390,38 @@
       swing = parseInt(e.target.value, 10);
       document.getElementById('swingValue').textContent = swing + '%';
     });
+
+    // --- Master mixer (drum + bass) ---
+    const drumBusSlider = document.getElementById('drumBusSlider');
+    if (drumBusSlider) {
+      drumBusSlider.addEventListener('input', e => {
+        drumBusLevel = parseInt(e.target.value, 10) / 100;
+        document.getElementById('drumBusVal').textContent = e.target.value;
+        applyMasterBuses();
+      });
+      drumBusSlider.addEventListener('change', pushHistory);
+      drumBusSlider.addEventListener('dblclick', () => {
+        drumBusLevel = 0.9;
+        updateMasterMixerUI();
+        applyMasterBuses();
+        pushHistory();
+      });
+    }
+    const bassBusSlider = document.getElementById('bassBusSlider');
+    if (bassBusSlider) {
+      bassBusSlider.addEventListener('input', e => {
+        bassBusLevel = parseInt(e.target.value, 10) / 100;
+        document.getElementById('bassBusVal').textContent = e.target.value;
+        applyMasterBuses();
+      });
+      bassBusSlider.addEventListener('change', pushHistory);
+      bassBusSlider.addEventListener('dblclick', () => {
+        bassBusLevel = 0.8;
+        updateMasterMixerUI();
+        applyMasterBuses();
+        pushHistory();
+      });
+    }
 
     // --- Pattern length ---
     document.getElementById('lengthSelect').addEventListener('change', e => {
