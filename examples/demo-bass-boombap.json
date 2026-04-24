@@ -1,10 +1,12 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T20:50:43Z",
+  "exportedAt": "2026-04-24T21:15:10Z",
   "bpm": 90,
-  "swing": 52,
+  "swing": 55,
   "patternLength": 16,
   "humanize": true,
+  "masterDrum": 0.9,
+  "masterBass": 0.8,
   "trackParams": [
     {
       "volume": 0.9,
@@ -110,20 +112,15 @@
         null,
         null,
         null,
+        null,
+        null,
+        null,
         {
           "vel": 1.0,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        {
-          "vel": 1.0,
-          "prob": 100,
-          "ratch": 1,
-          "nudge": 0
-        },
-        null,
-        null,
         null,
         null,
         null,
@@ -160,61 +157,101 @@
       ],
       [
         {
-          "vel": 0.55,
+          "vel": 0.65,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null,
         {
-          "vel": 0.55,
+          "vel": 0.35,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null,
         {
-          "vel": 0.55,
+          "vel": 0.65,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null,
         {
-          "vel": 0.55,
+          "vel": 0.35,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null,
         {
-          "vel": 0.55,
+          "vel": 0.65,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null,
         {
-          "vel": 0.55,
+          "vel": 0.35,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null,
         {
-          "vel": 0.55,
+          "vel": 0.65,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null,
         {
-          "vel": 0.55,
+          "vel": 0.35,
           "prob": 100,
           "ratch": 1,
           "nudge": 0
         },
-        null
+        {
+          "vel": 0.65,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        },
+        {
+          "vel": 0.35,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        },
+        {
+          "vel": 0.65,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        },
+        {
+          "vel": 0.35,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        },
+        {
+          "vel": 0.65,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        },
+        {
+          "vel": 0.35,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        },
+        {
+          "vel": 0.65,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        },
+        {
+          "vel": 0.35,
+          "prob": 100,
+          "ratch": 1,
+          "nudge": 0
+        }
       ],
       [
         null,
@@ -754,21 +791,47 @@
   ],
   "bass": {
     "trackParams": {
-      "volume": 0.82,
+      "volume": 0.75,
       "mute": false,
       "solo": false,
       "pan": 0.0,
-      "cutoff": 0.38,
-      "resonance": 4.0,
+      "cutoff": 0.5,
+      "resonance": 3.0,
       "envAmount": 0.55,
-      "decay": 260,
-      "drive": 0.3
+      "decay": 180,
+      "drive": 0.2
     },
     "patterns": {
       "A": [
         {
           "note": "D1",
-          "vel": 0.95,
+          "vel": 0.9,
+          "len": 0.5,
+          "accent": true,
+          "slide": false
+        },
+        null,
+        null,
+        {
+          "note": "D1",
+          "vel": 0.55,
+          "len": 0.2,
+          "accent": false,
+          "slide": false
+        },
+        null,
+        null,
+        {
+          "note": "F1",
+          "vel": 0.7,
+          "len": 0.35,
+          "accent": false,
+          "slide": false
+        },
+        null,
+        {
+          "note": "A1",
+          "vel": 0.8,
           "len": 0.4,
           "accent": true,
           "slide": false
@@ -777,65 +840,27 @@
         null,
         {
           "note": "D1",
-          "vel": 0.8,
-          "len": 0.35,
+          "vel": 0.55,
+          "len": 0.2,
           "accent": false,
           "slide": false
         },
         null,
+        null,
         {
-          "note": "F1",
-          "vel": 0.82,
-          "len": 0.35,
-          "accent": false,
-          "slide": false
-        },
-        {
-          "note": "A1",
-          "vel": 0.85,
+          "note": "C2",
+          "vel": 0.7,
           "len": 0.3,
           "accent": false,
           "slide": true
         },
         {
-          "note": "F1",
-          "vel": 0.8,
-          "len": 0.3,
+          "note": "D2",
+          "vel": 0.65,
+          "len": 0.25,
           "accent": false,
           "slide": false
-        },
-        {
-          "note": "D1",
-          "vel": 0.95,
-          "len": 0.4,
-          "accent": true,
-          "slide": false
-        },
-        null,
-        null,
-        {
-          "note": "F1",
-          "vel": 0.82,
-          "len": 0.35,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "A1",
-          "vel": 0.85,
-          "len": 0.3,
-          "accent": false,
-          "slide": true
-        },
-        {
-          "note": "F1",
-          "vel": 0.8,
-          "len": 0.3,
-          "accent": false,
-          "slide": false
-        },
-        null
+        }
       ],
       "B": [
         null,

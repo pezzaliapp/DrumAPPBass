@@ -198,12 +198,12 @@ Dopo un push, per vedere la nuova versione serve un **hard reload** per bypassar
 
 ## 🎁 Demo incluse
 
-Nella cartella [`examples/`](examples/) trovi **22 set completi** importabili col bottone **DEMOS** o **IMPORT**:
+Nella cartella [`examples/`](examples/) trovi set completi importabili col bottone **DEMOS** o **IMPORT**:
 
-- **14 demo drum-only v2** (DrumAPP originale, invariate): house, trap, boombap, dnb, makesomenoise, ukhardcore, onedrop, dadada, wewillrockyou, sevennation, anotherone, superstition, rosanna, stayinalive, takefive, wipeout, billiejean, funkydrummer, levee, apache, impeach, ashleysroachclip, synthsub.
-- **8 nuove demo drum+bass v3** (esclusive DrumAPPBass): `demo-bass-sevennation`, `demo-bass-anotherone`, `demo-bass-billiejean`, `demo-bass-superstition`, `demo-bass-onedrop`, `demo-bass-house`, `demo-bass-boombap`, `demo-bass-trap`.
+- **Demo drum-only v2** (DrumAPP originale, invariate): house, trap, boombap, dnb, makesomenoise, ukhardcore, onedrop, dadada, wewillrockyou, sevennation, anotherone, superstition, rosanna, stayinalive, takefive, wipeout, billiejean, funkydrummer, levee, apache, impeach, ashleysroachclip, synthsub.
+- **4 demo drum+bass v3 curate** (esclusive DrumAPPBass): `demo-bass-house` (A minor four-on-the-floor), `demo-bass-onedrop` (A minor reggae), `demo-bass-boombap` (D minor swing 55), `demo-bass-trap` (F minor sub-808).
 
-> ⚠️ Tutte le demo sono **ricostruzioni ritmico-armoniche generiche** (scheletro kick/snare/percussion e movimento di basso). Non riproducono melodie, voci, arrangement o timbri specifici delle registrazioni originali, che restano protetti.
+Le 4 demo bass sono astratte per genere, non ricostruzioni di brani specifici — scritte con approccio da bassista, con scelte armoniche esplicite.
 
 Vedi il [README degli esempi](examples/README.md) per dettagli su ciascuna demo.
 

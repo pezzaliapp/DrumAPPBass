@@ -1665,15 +1665,11 @@
     { file: 'demo-ashleysroachclip.json', name: "Ashley's Roachclip",   bpm: 100, tag: 'classic', desc: '1974 · funky con open hat' },
     { file: 'demo-synthsub.json',         name: 'Synthetic Sub-style',  bpm:  91, tag: 'classic', desc: '1973 · sparso, spazio per voce' },
 
-    // ★ Nuove demo DrumAPPBass con bassline sintetizzata (v3)
-    { file: 'demo-bass-sevennation.json', name: 'Seven Nation + Bass',  bpm: 124, tag: 'bass', desc: 'Iconica 7-note bassline E-G-D-C-B' },
-    { file: 'demo-bass-anotherone.json',  name: 'Another One + Bass',   bpm: 110, tag: 'bass', desc: 'Ostinato E basso + four-on-the-floor' },
-    { file: 'demo-bass-billiejean.json',  name: 'Billie Jean + Bass',   bpm: 117, tag: 'bass', desc: 'Sincopato F# A B sul Linn LM-1' },
-    { file: 'demo-bass-superstition.json',name: 'Superstition + Bass',  bpm: 100, tag: 'bass', desc: 'Funky ghost + 16th bassline con slide' },
-    { file: 'demo-bass-onedrop.json',     name: 'Reggae One-drop+Bass', bpm:  80, tag: 'bass', desc: 'Reggae con pause sul down-beat' },
-    { file: 'demo-bass-house.json',       name: 'House + Bass',         bpm: 124, tag: 'bass', desc: '4/4 + bass 1/8 con accent' },
-    { file: 'demo-bass-boombap.json',     name: 'Boom Bap + Bass',      bpm:  90, tag: 'bass', desc: 'Hip-hop groove + slide alla dominante' },
-    { file: 'demo-bass-trap.json',        name: 'Trap + 808 Bass',      bpm: 140, tag: 'bass', desc: 'Ratchet hats + sub-bass 808 long decay' },
+    // 🎸 Demo drum+bass curate (v3) — 4 set astratti per genere
+    { file: 'demo-bass-house.json',   name: 'House + Bass',     bpm: 124, tag: 'bass', desc: 'A minor 4/4 · tonica + slide alla dominante' },
+    { file: 'demo-bass-onedrop.json', name: 'Reggae One-drop',  bpm:  80, tag: 'bass', desc: 'A minor · kick sul 3, bass con pause sacre' },
+    { file: 'demo-bass-boombap.json', name: 'Boom Bap + Bass',  bpm:  90, tag: 'bass', desc: 'D minor swing 55 · tonica/terza/quinta' },
+    { file: 'demo-bass-trap.json',    name: 'Trap 808 Bass',    bpm: 140, tag: 'bass', desc: 'F minor · sub lungo + slide, ratchet hats' },
   ];
 
   function openDemos() {

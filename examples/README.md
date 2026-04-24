@@ -2,26 +2,24 @@
 
 Set di esempio importabili nell'app via il bottone **IMPORT** o **DEMOS**. Ognuno è pensato per dimostrare un **genere diverso** e le feature Pro che lo caratterizzano.
 
-Le **14 demo drum-only v2** originali di DrumAPP sono preservate integralmente e caricabili senza modifiche (il blocco bass viene inizializzato vuoto automaticamente). In più, **8 nuove demo drum+bass v3** esclusive di DrumAPPBass mostrano la sezione basso in azione.
+Le **14 demo drum-only v2** originali di DrumAPP sono preservate integralmente e caricabili senza modifiche (il blocco bass viene inizializzato vuoto automaticamente). In più, **4 demo drum+bass v3 curate** esclusive di DrumAPPBass mostrano la sezione basso in azione.
 
 ---
 
-## 🎸 Demo drum+bass v3 (nuove, esclusive DrumAPPBass)
+## 🎸 Demo drum+bass v3 (esclusive DrumAPPBass)
 
-| File | Stile | BPM | Cosa dimostra |
+Quattro set astratti per genere (non ricostruzioni di brani specifici), scritti con approccio da bassista: groove e bassline intenzionali, scelte armoniche esplicite, minimaliste quando il genere lo richiede.
+
+| File | Genere / tonalità | BPM | Carattere |
 |---|---|---|---|
-| [`demo-bass-sevennation.json`](demo-bass-sevennation.json)   | Stadium rock          | 124 | Iconica 7-note bassline E-G-E-D-C-B con accent sugli 1 e 3 |
-| [`demo-bass-anotherone.json`](demo-bass-anotherone.json)     | Rock-disco            | 110 | Ostinato E1 ripetuto + slide sulla G finale |
-| [`demo-bass-billiejean.json`](demo-bass-billiejean.json)     | Linn-style pop         | 117 | Sincopato F#1 A1 B1 con humanize, tipico Linn LM-1 |
-| [`demo-bass-superstition.json`](demo-bass-superstition.json) | Funk 16th              | 100 | 16th con ghost snare, basso funky con pause, slide a dominante |
-| [`demo-bass-onedrop.json`](demo-bass-onedrop.json)           | Reggae one-drop        |  80 | Pause sul down-beat, basso pulsante sul 2 e 4 con accent |
-| [`demo-bass-house.json`](demo-bass-house.json)               | House                  | 124 | 4/4 + basso 1/8 con pattern di accenti sugli 1 e 9 |
-| [`demo-bass-boombap.json`](demo-bass-boombap.json)           | Hip-hop swing 52%      |  90 | Kick sincopato + basso con slide alla dominante |
-| [`demo-bass-trap.json`](demo-bass-trap.json)                 | Trap sub-bass 808-like | 140 | Ratchet hats + sub-bass C1/A#0 con decay lungo e drive alto |
-
-> ⚠️ Tutte le basslines sono **ricostruzioni ritmico-armoniche generiche** ispirate a brani iconici. Non riproducono melodie, voci, arrangement o timbri specifici delle registrazioni originali. La scelta di note/groove è grammatica musicale comune.
+| [`demo-bass-house.json`](demo-bass-house.json)     | House · **A minor**      | 124 | Four-on-the-floor: bassline sulla tonica A1 con accent sui 4 downbeat, slide di passaggio G2 → E2 a fine misura per tensione/release. |
+| [`demo-bass-onedrop.json`](demo-bass-onedrop.json) | Reggae one-drop · **A minor** |  80 | Kick SOLO sul 3 (one-drop), rimshot layered. Il basso reggae suona DOPO il kick, con pause strategiche sul down-beat. Niente drive, cutoff morbido. |
+| [`demo-bass-boombap.json`](demo-bass-boombap.json) | Hip-hop boom bap · **D minor** |  90 | Swing 55%, humanize on. Poche note: tonica D1, terza F1, quinta A1. Accent sul downbeat, hat 16th con ghost notes alternate. |
+| [`demo-bass-trap.json`](demo-bass-trap.json)       | Trap 808 · **F minor**     | 140 | Sub-bass lungo (length 0.95 sul downbeat). Ratchet 2×/3× sui closed hat. Cutoff basso, decay lungo, drive moderato — lascia respirare il beat. |
 
 Per rigenerare programmaticamente questi file: `python3 _build_bass_demos.py`.
+
+> ⚠️ Le basslines sono **composizioni originali per genere**, non copia di brani specifici. Note, groove e tonalità sono scelti per esemplificare la grammatica musicale comune di ogni stile.
 
 ---
 
