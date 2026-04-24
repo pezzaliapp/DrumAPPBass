@@ -1,0 +1,40 @@
+{
+  "name": "DrumAPPBass — Drum & Bass Machine",
+  "short_name": "DrumAPPBass",
+  "description": "Drum Machine 16 step a 8 voci + sezione BASS (step sequencer e looper live) completamente sintetizzata in Web Audio. Fork di DrumAPP con sintesi basso stile 303/sub, pattern A/B/C/D, song mode, bounce WAV, Web MIDI, PWA offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eae3d2",
+  "theme_color": "#1a1a22",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

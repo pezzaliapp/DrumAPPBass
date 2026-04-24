@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>DrumAPPBass — Drum & Bass Machine</title>
+  <meta name="description" content="Drum & Bass Machine a 8 voci drum + sezione bass (step sequencer con accent/slide + looper live). 16 step, swing, velocity, probability, filter, pattern multipli, bounce WAV, Web MIDI, PWA offline.">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1a22">
+  <meta name="color-scheme" content="light">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="DrumAPPBass">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Sans:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="stage">
+
+    <!-- ================= TOP: brand · transport · tempo · swing ================= -->
+    <header class="top">
+      <div class="brand">
+        <h1 class="brand__name">DRUM<span class="brand__slash">/</span>APP<span class="brand__suffix">BASS</span></h1>
+        <p class="brand__tag">PRO · 8 DRUMS + BASS · EDITION N°03</p>
+      </div>
+
+      <button class="transport" id="playButton" type="button" aria-label="Play/Stop">
+        <span class="transport__icon" id="playIcon" aria-hidden="true">▶</span>
+        <span class="transport__label" id="playLabel">PLAY</span>
+      </button>
+
+      <div class="tempo">
+        <div class="tempo__head">
+          <span class="tempo__label">TEMPO</span>
+          <button class="tap-btn" id="tapBtn" type="button" title="Tap tempo (T)">TAP</button>
+        </div>
+        <div class="tempo__readout" id="bpmValue">120</div>
+        <input type="range" id="bpmSlider" min="60" max="200" value="120" class="tempo__slider" aria-label="BPM">
+
+        <div class="tempo__head tempo__head--swing">
+          <span class="tempo__label">SWING</span>
+          <span class="tempo__unit" id="swingValue">0%</span>
+        </div>
+        <input type="range" id="swingSlider" min="0" max="75" value="0" class="tempo__slider" aria-label="Swing">
+      </div>
+    </header>
+
+    <!-- ================= ACTIVE TRACK PANEL (drum) ================= -->
+    <section class="atrack" id="atrackDrum" aria-label="Parametri traccia drum attiva">
+      <div class="atrack__head">
+        <span class="atrack__dot" id="atDot"></span>
+        <span class="atrack__label">EDITING</span>
+        <span class="atrack__name" id="atName">KICK</span>
+        <span class="atrack__hint">(click sul nome della traccia per cambiare · <kbd>B</kbd> per basso)</span>
+      </div>
+      <div class="atrack__knobs">
+        <label class="knob">
+          <span class="knob__label">VOL <span class="knob__val" id="atVolV">85</span></span>
+          <input type="range" id="atVol" min="0" max="100" value="85">
+        </label>
+        <label class="knob">
+          <span class="knob__label">PAN <span class="knob__val" id="atPanV">C</span></span>
+          <input type="range" id="atPan" min="-100" max="100" value="0" title="Doppio click per centro">
+        </label>
+        <label class="knob">
+          <span class="knob__label">PITCH <span class="knob__val" id="atPitchV">+0</span></span>
+          <input type="range" id="atPitch" min="-12" max="12" value="0">
+        </label>
+        <label class="knob">
+          <span class="knob__label">DECAY <span class="knob__val" id="atDecayV">1.00</span></span>
+          <input type="range" id="atDecay" min="40" max="250" value="100">
+        </label>
+        <label class="knob">
+          <span class="knob__label">FILTER</span>
+          <select id="atFilter">
+            <option value="off">OFF</option>
+            <option value="lowpass">LOW-PASS</option>
+            <option value="highpass">HIGH-PASS</option>
+          </select>
+        </label>
+        <label class="knob">
+          <span class="knob__label">CUTOFF <span class="knob__val" id="atCutoffV">70</span></span>
+          <input type="range" id="atCutoff" min="0" max="100" value="70">
+        </label>
+      </div>
+    </section>
+
+    <!-- ================= ACTIVE TRACK PANEL (bass) ================= -->
+    <section class="atrack atrack--bass" id="atrackBass" aria-label="Parametri traccia basso">
+      <div class="atrack__head">
+        <span class="atrack__dot atrack__dot--bass"></span>
+        <span class="atrack__label">EDITING</span>
+        <span class="atrack__name">BASS</span>
+        <span class="atrack__hint">(premi <kbd>B</kbd> per tornare alle drum)</span>
+        <button class="ts-btn ts-btn--mute" id="bassMuteBtn" type="button" title="Mute">M</button>
+        <button class="ts-btn ts-btn--solo" id="bassSoloBtn" type="button" title="Solo">S</button>
+      </div>
+      <div class="atrack__knobs">
+        <label class="knob">
+          <span class="knob__label">VOL <span class="knob__val" id="bVolV">85</span></span>
+          <input type="range" id="bVol" min="0" max="100" value="85">
+        </label>
+        <label class="knob">
+          <span class="knob__label">PAN <span class="knob__val" id="bPanV">C</span></span>
+          <input type="range" id="bPan" min="-100" max="100" value="0" title="Doppio click per centro">
+        </label>
+        <label class="knob">
+          <span class="knob__label">CUTOFF <span class="knob__val" id="bCutoffV">40</span></span>
+          <input type="range" id="bCutoff" min="0" max="100" value="40">
+        </label>
+        <label class="knob">
+          <span class="knob__label">RES <span class="knob__val" id="bResV">5.0</span></span>
+          <input type="range" id="bRes" min="5" max="150" value="50">
+        </label>
+        <label class="knob">
+          <span class="knob__label">ENV <span class="knob__val" id="bEnvV">+70</span></span>
+          <input type="range" id="bEnv" min="-100" max="100" value="70">
+        </label>
+        <label class="knob">
+          <span class="knob__label">DECAY <span class="knob__val" id="bDecayV">250</span></span>
+          <input type="range" id="bDecay" min="60" max="800" value="250">
+        </label>
+        <label class="knob">
+          <span class="knob__label">DRIVE <span class="knob__val" id="bDriveV">20</span></span>
+          <input type="range" id="bDrive" min="0" max="100" value="20">
+        </label>
+      </div>
+    </section>
+
+    <!-- ================= SEQUENCER ================= -->
+    <section class="sequencer-wrap">
+      <div class="sequencer" id="sequencer" role="grid" aria-label="Step sequencer drum"></div>
+    </section>
+
+    <!-- ================= BASS PANEL ================= -->
+    <section class="bass-panel" id="bassPanel" aria-label="Sezione basso">
+      <div class="bass-panel__head">
+        <span class="bass-panel__title">BASS</span>
+
+        <div class="bass-panel__modes">
+          <span class="storage__label">MODE</span>
+          <button class="bass-mode-btn bass-mode-btn--on" data-bass-mode="step"   type="button">STEP</button>
+          <button class="bass-mode-btn"                   data-bass-mode="looper" type="button">LOOPER</button>
+        </div>
+
+        <div class="bass-panel__edits" id="bassEditGroup">
+          <span class="storage__label">EDIT</span>
+          <button class="bass-edit-btn bass-edit-btn--on" data-bass-edit="note"  type="button">NOTE</button>
+          <button class="bass-edit-btn"                    data-bass-edit="vel"   type="button">VEL</button>
+          <button class="bass-edit-btn"                    data-bass-edit="len"   type="button">LEN</button>
+          <button class="bass-edit-btn"                    data-bass-edit="acc"   type="button">ACC</button>
+          <button class="bass-edit-btn"                    data-bass-edit="slide" type="button">SLIDE</button>
+        </div>
+
+        <div class="bass-panel__looperctl" id="bassLooperCtl">
+          <button class="chip chip--ghost" id="bassRecBtn" type="button" title="Rec loop bass (R)">REC</button>
+          <button class="chip chip--ghost" id="bassClearLoopBtn" type="button" title="Cancella loop corrente">CLEAR LOOP</button>
+          <label class="toggle"><input type="checkbox" id="bassQuantChk" checked> <span>QUANT 1/16</span></label>
+          <label class="toggle"><input type="checkbox" id="bassPlayStepChk"> <span>PLAY STEP TOO</span></label>
+        </div>
+      </div>
+
+      <div class="bass-grid-wrap">
+        <div class="bass-grid" id="bassGrid" role="grid" aria-label="Step sequencer basso"></div>
+      </div>
+
+      <div class="bass-keyboard-wrap">
+        <div class="bass-keyboard__octave">
+          <button class="chip chip--ghost bass-oct-btn" id="bassOctDown" type="button" aria-label="Ottava giù">−</button>
+          <span class="bass-keyboard__label">OCT <span id="bassOctLabel">2</span></span>
+          <button class="chip chip--ghost bass-oct-btn" id="bassOctUp" type="button" aria-label="Ottava su">+</button>
+        </div>
+        <div class="bass-keyboard" id="bassKeyboard" role="group" aria-label="Tastiera on-screen basso"></div>
+      </div>
+
+      <div class="bass-panel__hint" id="bassHint">STEP · click per accendere, scroll/drag verticale per cambiare nota (C1–B3)</div>
+    </section>
+
+    <!-- ================= MODE + PATTERN + LENGTH ================= -->
+    <section class="modebar" aria-label="Modalità edit e pattern">
+      <div class="modebar__group">
+        <span class="storage__label">EDIT</span>
+        <button class="mode-btn mode-btn--on" data-edit-mode="trig"  type="button">TRIG</button>
+        <button class="mode-btn"              data-edit-mode="vel"   type="button">VEL</button>
+        <button class="mode-btn"              data-edit-mode="prob"  type="button">PROB</button>
+        <button class="mode-btn"              data-edit-mode="ratch" type="button">RATCH</button>
+        <button class="mode-btn"              data-edit-mode="nudge" type="button">NUDGE</button>
+      </div>
+
+      <div class="modebar__group">
+        <span class="storage__label">PATTERN</span>
+        <button class="pat-btn" data-pattern="A" type="button">A</button>
+        <button class="pat-btn" data-pattern="B" type="button">B</button>
+        <button class="pat-btn" data-pattern="C" type="button">C</button>
+        <button class="pat-btn" data-pattern="D" type="button">D</button>
+        <label class="toggle">
+          <input type="checkbox" id="songChk"> <span>SONG</span>
+        </label>
+      </div>
+
+      <div class="modebar__group">
+        <span class="storage__label">LEN</span>
+        <select id="lengthSelect">
+          <option value="8">8</option>
+          <option value="12">12</option>
+          <option value="16" selected>16</option>
+          <option value="24">24</option>
+          <option value="32">32</option>
+        </select>
+        <label class="toggle"><input type="checkbox" id="humanizeChk"> <span>HUMANIZE</span></label>
+        <label class="toggle"><input type="checkbox" id="metroChk"> <span>METRO</span></label>
+      </div>
+    </section>
+
+    <div class="step-readout" id="stepReadout">—</div>
+
+    <!-- ================= SONG EDITOR ================= -->
+    <section class="songbar" aria-label="Song editor">
+      <span class="storage__label">SEQUENCE</span>
+      <div class="songbar__slots" id="songSlots"></div>
+      <div class="songbar__ctl">
+        <button class="song-ctl-btn" id="songRemoveBtn" type="button" title="Rimuovi ultimo slot">−</button>
+        <span class="songbar__len">len <span id="songLenVal">4</span></span>
+        <button class="song-ctl-btn" id="songAddBtn" type="button" title="Aggiungi slot">+</button>
+      </div>
+      <span class="songbar__hint">click = cambia · attiva SONG per suonare in sequenza</span>
+    </section>
+
+    <!-- ================= STORAGE ================= -->
+    <section class="storage" aria-label="Salvataggio e condivisione">
+      <div class="storage__group">
+        <span class="storage__label">SLOT</span>
+        <div class="slots">
+          <button class="slot" data-slot="A" type="button" aria-label="Slot A">A</button>
+          <button class="slot" data-slot="B" type="button" aria-label="Slot B">B</button>
+          <button class="slot" data-slot="C" type="button" aria-label="Slot C">C</button>
+          <button class="slot" data-slot="D" type="button" aria-label="Slot D">D</button>
+        </div>
+      </div>
+
+      <div class="storage__group">
+        <span class="storage__label">FILE</span>
+        <button class="chip chip--ghost" id="exportBtn" type="button">EXPORT</button>
+        <button class="chip chip--ghost" id="importBtn" type="button">IMPORT</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+
+      <div class="storage__group">
+        <span class="storage__label">OUT</span>
+        <button class="chip" id="shareBtn" type="button">SHARE</button>
+        <button class="chip" id="wavBtn" type="button" title="Bounce WAV offline">BOUNCE</button>
+        <button class="chip chip--ghost" id="recBtn" type="button" title="Registra live ciò che senti">REC</button>
+        <button class="chip chip--ghost" id="midiBtn" type="button">MIDI</button>
+      </div>
+
+      <div class="storage__group">
+        <span class="storage__label">HIST</span>
+        <button class="chip chip--ghost" id="copyBtn" type="button" title="Copia il pattern corrente">COPY</button>
+        <button class="chip chip--ghost" id="pasteBtn" type="button" title="Incolla sul pattern corrente">PASTE</button>
+        <button class="chip chip--ghost" id="undoBtn" type="button" title="Undo (Cmd/Ctrl+Z)">UNDO</button>
+        <button class="chip chip--ghost" id="redoBtn" type="button" title="Redo (Cmd/Ctrl+Shift+Z)">REDO</button>
+      </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="foot">
+      <div class="foot__controls">
+        <button class="chip" id="demoBtn" type="button">DEMO</button>
+        <button class="chip" id="demosBtn" type="button" title="Libreria di 14 demo importabili">DEMOS</button>
+        <button class="chip chip--ghost" id="clearBtn" type="button">CLEAR</button>
+        <button class="chip chip--help" id="helpBtn" type="button" title="Guida (?)">?</button>
+      </div>
+      <div class="foot__shortcuts">
+        <kbd>SPACE</kbd> play · <kbd>T</kbd> tap · <kbd>1-4</kbd> pattern · <kbd>↑↓</kbd> traccia · <kbd>M</kbd>/<kbd>S</kbd> mute/solo · <kbd>C</kbd> clear · <kbd>B</kbd> bass · <kbd>L</kbd> step/looper · <kbd>⌘Z</kbd> undo
+      </div>
+      <div class="foot__meta">
+        <span>PWA · Web Audio · Drum + Bass · No samples</span>
+        <span class="foot__sig">© pezzaliapp</span>
+      </div>
+    </footer>
+
+    <!-- ================= BOUNCE MODAL ================= -->
+    <div class="modal" id="bounceModal" role="dialog" aria-modal="true" aria-labelledby="bounceTitle">
+      <div class="modal__backdrop" id="bounceBackdrop"></div>
+      <div class="modal__box">
+        <h3 class="modal__title" id="bounceTitle">BOUNCE WAV</h3>
+        <p class="modal__sub">Rendering offline del pattern come file audio.<br>
+          Durata stimata: <span id="bounceDuration">8.0s</span>
+        </p>
+        <div class="modal__options">
+          <label class="modal__opt"><input type="radio" name="bloops" value="2" checked> <span>2 loop del pattern corrente</span></label>
+          <label class="modal__opt"><input type="radio" name="bloops" value="4"> <span>4 loop del pattern corrente</span></label>
+          <label class="modal__opt"><input type="radio" name="bloops" value="8"> <span>8 loop del pattern corrente</span></label>
+          <label class="modal__opt" id="bounceSongOpt"><input type="radio" name="bloops" value="song"> <span>Intera song (A-A-B-A…)</span></label>
+        </div>
+        <div class="modal__actions">
+          <button class="chip chip--ghost" id="bounceCancel" type="button">ANNULLA</button>
+          <button class="chip" id="bounceConfirm" type="button">RENDER</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= DEMO LIBRARY MODAL ================= -->
+    <div class="modal" id="demosModal" role="dialog" aria-modal="true" aria-labelledby="demosTitle">
+      <div class="modal__backdrop" id="demosBackdrop"></div>
+      <div class="modal__box modal__box--demos">
+        <div class="help__head">
+          <h3 class="modal__title" id="demosTitle">DEMO LIBRARY</h3>
+          <button class="help__close" id="demosClose" type="button" aria-label="Chiudi">×</button>
+        </div>
+        <div class="demos__body">
+          <p class="demos__intro">
+            Click su una demo per caricarla al volo (senza scaricare il file).
+            Attiva poi <strong>SONG</strong> nella modebar e premi PLAY.<br>
+            <span class="demos__warn">⚠️ Questo sovrascriverà pattern, parametri e song sequence correnti. Salva prima in uno SLOT (hold 500 ms) se hai qualcosa da preservare.</span>
+          </p>
+          <div class="demos__grid" id="demosGrid">
+            <!-- popolato dinamicamente -->
+          </div>
+        </div>
+        <div class="modal__actions">
+          <a class="chip chip--ghost" href="examples/" target="_blank" rel="noopener">↓ Scarica JSON singoli</a>
+          <button class="chip" id="demosClose2" type="button" onclick="document.getElementById('demosModal').classList.remove('modal--open')">CHIUDI</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= HELP MODAL ================= -->
+    <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="modal__backdrop" id="helpBackdrop"></div>
+      <div class="modal__box modal__box--help">
+        <div class="help__head">
+          <h3 class="modal__title" id="helpTitle">GUIDA · DRUMAPPBASS</h3>
+          <button class="help__close" id="helpClose" type="button" aria-label="Chiudi">×</button>
+        </div>
+        <div class="help__body">
+
+          <section class="help__sec">
+            <h4>▶ PLAY &amp; TRANSPORT</h4>
+            <p>Clicca il cerchio nero grande, o premi <kbd>SPACE</kbd>. Il BPM si regola con lo slider, o batti <kbd>T</kbd> a ritmo per il tap tempo (almeno 2 tap).</p>
+            <p>Il primo click su qualsiasi parte della pagina sblocca l'audio — è una regola del browser, non c'è modo di aggirarla.</p>
+          </section>
+
+          <section class="help__sec">
+            <h4>◼ SEQUENCER &amp; EDIT MODE</h4>
+            <p>La griglia ha 8 tracce (kick, snare, hi-hat…) × 16 step (o più). Il selettore <strong>EDIT</strong> in basso cambia cosa fa il click su uno step:</p>
+            <ul class="help__list">
+              <li><strong>TRIG</strong> <span>(default)</span> — click = attiva/spegne lo step.</li>
+              <li><strong>VEL</strong> — click su uno step acceso e <em>trascina verticalmente</em> per impostare la velocity (volume di quel singolo colpo). La barra colorata che sale dal basso mostra il livello. Trascini su per alzare, giù per abbassare.</li>
+              <li><strong>PROB</strong> — stessa cosa ma imposta la probabilità 0–100%. A 50% lo step suona metà delle volte. Utile per variazioni casuali che non stancano l'orecchio.</li>
+              <li><strong>RATCH</strong> — imposta ratchet 1× / 2× / 3× / 4×. Il colpo si ripete N volte dentro lo stesso step. Tipico dei hi-hat trap.</li>
+              <li><strong>NUDGE</strong> — sposta lo step ±50 ms fuori dalla griglia. Micro-timing per sentirlo più "umano" o per creare swing manuale su singole tracce.</li>
+            </ul>
+          </section>
+
+          <section class="help__sec">
+            <h4>♫ PATTERN &amp; SONG</h4>
+            <p><strong>A / B / C / D</strong> sono 4 pattern live in memoria. Clicca per switchare durante il play, o usa <kbd>1</kbd>–<kbd>4</kbd>, o <kbd>[</kbd> <kbd>]</kbd> per prev/next.</p>
+            <p>La riga <strong>SEQUENCE</strong> è la playlist: clicca uno slot per cambiarlo (A→B→C→D→A). <kbd>+</kbd> / <kbd>−</kbd> allungano/accorciano. Poi attiva <strong>SONG</strong> nella modebar per far suonare la sequenza invece del solo pattern corrente.</p>
+          </section>
+
+          <section class="help__sec">
+            <h4>⚙ PARAMETRI PER TRACCIA</h4>
+            <p>Click sul <strong>nome</strong> della traccia (es. KICK) per selezionarla. In alto appaiono i controlli:</p>
+            <ul class="help__list">
+              <li><strong>VOL</strong> volume · <strong>PAN</strong> stereo (doppio click = centro)</li>
+              <li><strong>PITCH</strong> ±12 semitoni — abbassa il kick per il classico "boom 808"</li>
+              <li><strong>DECAY</strong> 0.4×–2.5× — più corto o più lungo</li>
+              <li><strong>FILTER</strong> LP/HP + <strong>CUTOFF</strong> — tipico filter-sweep durante build-up</li>
+              <li><strong>M</strong> mute · <strong>S</strong> solo (anche da tastiera: <kbd>M</kbd> <kbd>S</kbd> sulla traccia attiva)</li>
+            </ul>
+          </section>
+
+          <section class="help__sec help__sec--bass">
+            <h4>🎸 BASS — STEP SEQUENCER &amp; LOOPER</h4>
+            <p>Sotto il sequencer drum c'è un <strong>pannello BASS</strong> con una riga dedicata di 16 step sincronizzati col drum. Palette blu notte per distinguerlo.</p>
+            <p>Il toggle <strong>STEP / LOOPER</strong> nel pannello switcha le due modalità (anche con <kbd>L</kbd>):</p>
+            <ul class="help__list">
+              <li><strong>STEP</strong> (default) — griglia editabile. Scegli la modalità edit nel pannello:
+                <ul class="help__list">
+                  <li><strong>NOTE</strong> — click su uno step per accenderlo (nota default <code>C2</code>). Scroll/drag verticale per cambiare pitch (<code>C1 – B3</code>). Ri-click spegne.</li>
+                  <li><strong>VEL</strong> — drag verticale per velocity 0.05–1.0.</li>
+                  <li><strong>LEN</strong> — drag per length/gate 10–100% (quanto tiene la nota prima del release).</li>
+                  <li><strong>ACC</strong> — click toggla <em>accent</em>: +6 dB, filtro più aperto, Q più alta (stile 303).</li>
+                  <li><strong>SLIDE</strong> — click toggla <em>slide</em>: la nota successiva arriva con portamento 30 ms, senza ri-triggerare l'envelope del filtro (tie-note 303). Il bordo mostra una freccia → verso lo step seguente.</li>
+                </ul>
+              </li>
+              <li><strong>LOOPER</strong> — suoni dal vivo e la app registra nota + timestamp frazionari, poi li reinserisce in loop. La griglia step resta visibile in grigio (readonly) con palline che indicano le note registrate.</li>
+            </ul>
+            <p>In modalità LOOPER si attivano:</p>
+            <ul class="help__list">
+              <li><strong>Tastiera on-screen</strong> (1 ottava con bottoni ottava ±) — touch/click per suonare.</li>
+              <li><strong>Shortcut pianistiche</strong> computer keyboard: <kbd>A</kbd>=C, <kbd>W</kbd>=C#, <kbd>S</kbd>=D, <kbd>E</kbd>=D#, <kbd>D</kbd>=E, <kbd>F</kbd>=F, <kbd>T</kbd>=F#, <kbd>G</kbd>=G, <kbd>Y</kbd>=G#, <kbd>H</kbd>=A, <kbd>U</kbd>=A#, <kbd>J</kbd>=B, <kbd>K</kbd>=C (ottava alta). <kbd>Z</kbd>/<kbd>X</kbd> ottava giù/su. Attive <em>solo</em> in LOOPER per non collidere con le shortcut drum (<kbd>T</kbd> tap, <kbd>S</kbd> solo, <kbd>D</kbd> demo ecc.).</li>
+              <li><strong>REC</strong> (<kbd>R</kbd>) — aspetta il prossimo downbeat, poi registra fino a fine pattern. Overdub automatico (si aggiungono note a quelle esistenti).</li>
+              <li><strong>QUANT 1/16</strong> on/off — quantizza i timestamp al sedicesimo più vicino.</li>
+              <li><strong>PLAY STEP TOO</strong> — se on, in modalità LOOPER continua a suonare anche il pattern step (fonde le due fonti).</li>
+              <li><strong>CLEAR LOOP</strong> — svuota solo il loop live del pattern corrente.</li>
+            </ul>
+            <p><strong>Parametri bass track</strong> (premi <kbd>B</kbd> per mostrarli al posto dei drum): <strong>VOL · PAN · CUTOFF</strong> (50 Hz – 5 kHz) <strong>· RES</strong> (0.5–15) <strong>· ENV</strong> (−100..+100, mod del filtro) <strong>· DECAY</strong> env (60–800 ms) <strong>· DRIVE</strong> (WaveShaper 0–100%).</p>
+            <p>Ogni pattern A/B/C/D ha il proprio step-bass <em>e</em> il proprio live-loop (4+4 slot indipendenti). Il basso è sincronizzato con swing, humanize e song mode. Ratchet/Prob/Nudge restano drum-only — il basso ha parametri suoi (accent/slide/length). Il basso è incluso nel BOUNCE WAV e nel REC live.</p>
+            <p><strong>Routing MIDI</strong>: le note bass vengono inviate sul <strong>canale 2</strong>. I drum restano sul canale 10 GM standard.</p>
+          </section>
+
+          <section class="help__sec">
+            <h4>💾 SAVE &amp; EXPORT</h4>
+            <ul class="help__list">
+              <li><strong>SLOT A/B/C/D</strong> — tap per caricare, <em>hold 500 ms</em> per salvare (tutto il set)</li>
+              <li><strong>EXPORT / IMPORT</strong> — file <code>.json</code> con pattern, parametri, song sequence</li>
+              <li><strong>SHARE</strong> — URL compatto col pattern corrente, si copia in automatico</li>
+              <li><strong>BOUNCE</strong> — render offline in <code>.wav</code>, scegli 2/4/8 loop o intera song</li>
+              <li><strong>REC</strong> — cattura <em>live</em> tutto ciò che senti (knob twist, pattern switch). Salva <code>.webm</code>. Bottone diventa rosso pulsante con timer.</li>
+              <li><strong>MIDI</strong> — invia note General MIDI sulla prima porta disponibile (kick=36, snare=38…)</li>
+              <li><strong>COPY / PASTE</strong> — duplica il pattern corrente per ritoccarlo in un altro slot</li>
+              <li><strong>UNDO / REDO</strong> — <kbd>⌘Z</kbd> / <kbd>⌘⇧Z</kbd>, fino a 40 stati indietro</li>
+            </ul>
+          </section>
+
+          <section class="help__sec">
+            <h4>⌨ SHORTCUTS</h4>
+            <div class="help__kbd">
+              <span><kbd>SPACE</kbd> play</span>
+              <span><kbd>T</kbd> tap tempo</span>
+              <span><kbd>1</kbd>-<kbd>4</kbd> pattern</span>
+              <span><kbd>[</kbd> <kbd>]</kbd> pattern prec/succ</span>
+              <span><kbd>↑</kbd> <kbd>↓</kbd> traccia</span>
+              <span><kbd>M</kbd> mute · <kbd>S</kbd> solo</span>
+              <span><kbd>C</kbd> clear · <kbd>D</kbd> demo</span>
+              <span><kbd>B</kbd> focus bass · <kbd>L</kbd> STEP/LOOPER</span>
+              <span><kbd>R</kbd> rec loop <em>(in LOOPER)</em></span>
+              <span><kbd>A</kbd>–<kbd>K</kbd> note bass <em>(in LOOPER)</em></span>
+              <span><kbd>Z</kbd>/<kbd>X</kbd> ottava bass <em>(in LOOPER)</em></span>
+              <span><kbd>⌘Z</kbd> undo · <kbd>⌘⇧Z</kbd> redo</span>
+              <span><kbd>?</kbd> questa guida · <kbd>ESC</kbd> chiudi</span>
+            </div>
+          </section>
+
+          <section class="help__sec help__sec--tips">
+            <h4>💡 TIP RAPIDI</h4>
+            <ul class="help__list">
+              <li>Per trap hi-hat: modalità <strong>RATCH</strong>, imposta 2× o 3× sugli offbeat.</li>
+              <li>Per groove umano: un po' di <strong>SWING</strong> (25–45%) + <strong>HUMANIZE</strong> on.</li>
+              <li>Per variazione non ripetitiva: qualche step col <strong>PROB</strong> a 60–80%.</li>
+              <li>Stereo tipo drum-kit vero: kick e snare al centro, hi-hat R30, clap L40, cowbell R60.</li>
+              <li>Workflow song: copia A → incolla in B → varia. Costruisci sequence <code>A A B A A B C D</code>. REC on, PLAY, hai 8 misure.</li>
+            </ul>
+          </section>
+
+        </div>
+        <div class="modal__actions">
+          <button class="chip" id="helpClose2" type="button" onclick="document.getElementById('helpModal').classList.remove('modal--open')">HO CAPITO</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script src="app.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch(err => {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
