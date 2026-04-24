@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T20:16:19Z",
+  "exportedAt": "2026-04-24T20:50:35Z",
   "bpm": 124,
   "swing": 0,
   "patternLength": 16,
@@ -743,65 +743,59 @@
       "A": [
         {
           "note": "E2",
-          "vel": 0.9,
-          "len": 0.6,
+          "vel": 0.95,
+          "len": 0.9,
           "accent": true,
           "slide": false
         },
         null,
+        null,
+        null,
         {
           "note": "E2",
-          "vel": 0.9,
-          "len": 0.6,
+          "vel": 0.85,
+          "len": 0.45,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "G2",
-          "vel": 0.9,
-          "len": 0.6,
+          "vel": 0.88,
+          "len": 0.45,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "E2",
-          "vel": 0.9,
-          "len": 0.6,
+          "vel": 0.85,
+          "len": 0.45,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "D2",
-          "vel": 0.9,
-          "len": 0.6,
-          "accent": true,
+          "vel": 0.85,
+          "len": 0.45,
+          "accent": false,
           "slide": false
         },
         null,
         {
           "note": "C2",
-          "vel": 0.9,
-          "len": 0.6,
+          "vel": 0.85,
+          "len": 0.45,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "B1",
-          "vel": 0.9,
+          "vel": 0.95,
           "len": 0.6,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "E2",
-          "vel": 0.9,
-          "len": 0.6,
-          "accent": false,
+          "accent": true,
           "slide": false
         },
         null

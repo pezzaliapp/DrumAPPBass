@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T20:16:19Z",
+  "exportedAt": "2026-04-24T20:50:43Z",
   "bpm": 90,
   "swing": 52,
   "patternLength": 16,
@@ -768,7 +768,7 @@
       "A": [
         {
           "note": "D1",
-          "vel": 0.82,
+          "vel": 0.95,
           "len": 0.4,
           "accent": true,
           "slide": false
@@ -777,30 +777,36 @@
         null,
         {
           "note": "D1",
-          "vel": 0.82,
-          "len": 0.4,
+          "vel": 0.8,
+          "len": 0.35,
           "accent": false,
           "slide": false
         },
         null,
         {
-          "note": "A1",
+          "note": "F1",
           "vel": 0.82,
-          "len": 0.4,
+          "len": 0.35,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "A1",
+          "vel": 0.85,
+          "len": 0.3,
           "accent": false,
           "slide": true
         },
-        null,
         {
-          "note": "D1",
-          "vel": 0.82,
-          "len": 0.4,
+          "note": "F1",
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
         {
           "note": "D1",
-          "vel": 0.82,
+          "vel": 0.95,
           "len": 0.4,
           "accent": true,
           "slide": false
@@ -810,19 +816,25 @@
         {
           "note": "F1",
           "vel": 0.82,
-          "len": 0.4,
-          "accent": false,
-          "slide": true
-        },
-        null,
-        {
-          "note": "D1",
-          "vel": 0.82,
-          "len": 0.4,
+          "len": 0.35,
           "accent": false,
           "slide": false
         },
         null,
+        {
+          "note": "A1",
+          "vel": 0.85,
+          "len": 0.3,
+          "accent": false,
+          "slide": true
+        },
+        {
+          "note": "F1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
         null
       ],
       "B": [

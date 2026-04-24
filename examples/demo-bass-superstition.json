@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T20:16:19Z",
+  "exportedAt": "2026-04-24T20:50:39Z",
   "bpm": 100,
   "swing": 24,
   "patternLength": 16,
@@ -808,7 +808,7 @@
       "A": [
         {
           "note": "E1",
-          "vel": 0.85,
+          "vel": 0.95,
           "len": 0.35,
           "accent": true,
           "slide": false
@@ -816,66 +816,72 @@
         null,
         {
           "note": "G1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "B1",
           "vel": 0.85,
-          "len": 0.35,
+          "len": 0.25,
+          "accent": false,
+          "slide": true
+        },
+        null,
+        {
+          "note": "E1",
+          "vel": 0.78,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "A1",
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": true
         },
         {
-          "note": "E1",
-          "vel": 0.85,
-          "len": 0.35,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "D1",
-          "vel": 0.85,
-          "len": 0.35,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "E1",
+          "note": "B1",
           "vel": 0.85,
           "len": 0.35,
           "accent": false,
           "slide": false
         },
         {
-          "note": "G1",
-          "vel": 0.85,
+          "note": "E2",
+          "vel": 0.95,
           "len": 0.35,
           "accent": true,
-          "slide": true
-        },
-        {
-          "note": "E1",
-          "vel": 0.85,
-          "len": 0.35,
-          "accent": false,
           "slide": false
         },
         null,
         {
-          "note": "D1",
-          "vel": 0.85,
-          "len": 0.35,
+          "note": "G1",
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
-        null,
         {
-          "note": "C1",
+          "note": "B2",
           "vel": 0.85,
-          "len": 0.35,
+          "len": 0.25,
           "accent": false,
           "slide": true
         },
+        null,
         {
           "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "B1",
           "vel": 0.85,
           "len": 0.35,
           "accent": false,

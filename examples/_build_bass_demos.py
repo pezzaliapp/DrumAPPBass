@@ -112,108 +112,140 @@ def make_demo(bpm, swing, pattern_len, drum_params, drum_A, bass_params_obj,
 # ==============================================================
 
 def demo_sevennation():
-    """Stadium rock 124 BPM, bassline 7-note stile E-G-E-D-C-B-E."""
+    """Stadium rock 124 BPM in E minor.
+    Bassline 7-note iconica E2-G2-E2-D2-C2-B1 con E2 lungo iniziale
+    (length 0.9) e accent sul B1 finale. Tonalità E minor."""
     drum = empty_drum_pattern()
     set_steps(drum[0], [0, 8], vel=1.0)            # kick 1 e 3
     set_steps(drum[1], [4, 12], vel=0.9)           # snare 2 e 4
     set_steps(drum[2], [2, 6, 10, 14], vel=0.6)    # hihat offbeat
     bass = empty_bass_pattern()
-    # 7 note discendenti distribuite
-    notes = [("E2", 0), ("E2", 2), ("G2", 4), ("E2", 6),
-             ("D2", 8), ("C2", 10), ("B1", 12), ("E2", 14)]
-    for note, step in notes:
-        bass[step] = bass_cell(note, vel=0.9, length=0.6,
-                               accent=(step in (0, 8)))
+    # 7 note discendenti iconiche ancorate su E minor
+    bass[0]  = bass_cell("E2", vel=0.95, length=0.9, accent=True)   # E2 lungo
+    bass[4]  = bass_cell("E2", vel=0.85, length=0.45)
+    bass[6]  = bass_cell("G2", vel=0.88, length=0.45)
+    bass[8]  = bass_cell("E2", vel=0.85, length=0.45)
+    bass[10] = bass_cell("D2", vel=0.85, length=0.45)
+    bass[12] = bass_cell("C2", vel=0.85, length=0.45)
+    bass[14] = bass_cell("B1", vel=0.95, length=0.6, accent=True)   # B1 accentato
     return make_demo(124, 0, 16, default_drum_params(), drum,
                      bass_params(cutoff=0.45, resonance=3.5,
                                  envAmount=0.6, decay=220, drive=0.25),
                      bass)
 
 def demo_anotherone():
-    """Rock-disco 110 BPM, ostinato E basso four-on-the-floor con slide finale."""
+    """Rock-disco 110 BPM in E minor.
+    Ostinato E1 'dun-dun-dun' caratteristico con length corta e pause
+    sul 2 e 4 (lasciando spazio alla snare), slide su G1 di passaggio.
+    Accent sugli step 1 e 9."""
     drum = empty_drum_pattern()
     set_steps(drum[0], [0, 4, 8, 12])               # kick 4/4
     set_steps(drum[1], [4, 12], vel=0.85)           # snare 2 e 4
     set_steps(drum[2], [2, 6, 10, 14], vel=0.6)
     bass = empty_bass_pattern()
-    for step in [0, 2, 4, 6, 8, 10, 12]:
-        bass[step] = bass_cell("E1", vel=0.85, length=0.45)
-    bass[14] = bass_cell("G1", vel=0.9, length=0.7, slide=True)
+    # Ostinato E1 con pause sugli step del backbeat (4 e 12)
+    # Length corta (0.3), accent su 1 e 9
+    bass[0]  = bass_cell("E1", vel=0.95, length=0.3, accent=True)
+    bass[1]  = bass_cell("E1", vel=0.8, length=0.3)
+    bass[2]  = bass_cell("E1", vel=0.8, length=0.3)
+    bass[3]  = bass_cell("E1", vel=0.8, length=0.3)
+    # step 4 pausa (snare)
+    bass[5]  = bass_cell("E1", vel=0.8, length=0.3)
+    bass[6]  = bass_cell("G1", vel=0.8, length=0.3, slide=True)     # slide passaggio
+    bass[7]  = bass_cell("E1", vel=0.8, length=0.3)
+    bass[8]  = bass_cell("E1", vel=0.95, length=0.3, accent=True)
+    bass[9]  = bass_cell("E1", vel=0.8, length=0.3)
+    bass[10] = bass_cell("E1", vel=0.8, length=0.3)
+    bass[11] = bass_cell("E1", vel=0.8, length=0.3)
+    # step 12 pausa (snare)
+    bass[13] = bass_cell("E1", vel=0.8, length=0.3)
+    bass[14] = bass_cell("G1", vel=0.8, length=0.3, slide=True)
+    bass[15] = bass_cell("E1", vel=0.8, length=0.3)
     return make_demo(110, 0, 16, default_drum_params(), drum,
                      bass_params(cutoff=0.42, resonance=4.0,
                                  envAmount=0.55, decay=200, drive=0.3),
                      bass)
 
 def demo_billiejean():
-    """Linn-style 117 BPM, bass sincopato F#1 A1 B1 A1 F#1 E1."""
+    """Linn-style 117 BPM in F# minor.
+    Groove 2-bar sincopato F#1 → A1 → E1 → F#1 con nudge su alcuni step
+    per il feel 'laid-back', length media 0.5."""
     drum = empty_drum_pattern()
     set_steps(drum[0], [0, 10])                     # kick 1 e 2.5 (off)
     set_steps(drum[1], [4, 12])                     # snare 2 e 4
     set_steps(drum[2], [2, 6, 10, 14], vel=0.6)
     bass = empty_bass_pattern()
-    pattern = [
-        ("F#1", 0, True),
-        ("F#1", 2, False),
-        ("F#1", 4, False),
-        ("A1", 6, False),
-        ("B1", 8, True),
-        ("A1", 10, False),
-        ("F#1", 12, False),
-        ("E1", 14, False),
-    ]
-    for note, step, acc in pattern:
-        bass[step] = bass_cell(note, vel=0.88, length=0.5, accent=acc)
+    # F# minor: F#, A, E (VII grado), F#. Sincopato 2-bar.
+    # Step grid 16; pattern sincopato si sente meglio con nudge.
+    bass[0]  = bass_cell("F#1", vel=0.9, length=0.5, accent=True)
+    bass[3]  = bass_cell("F#1", vel=0.8, length=0.4)
+    bass[5]  = bass_cell("A1",  vel=0.85, length=0.45)
+    bass[6]  = bass_cell("E1",  vel=0.8, length=0.4)
+    bass[8]  = bass_cell("F#1", vel=0.9, length=0.5, accent=True)
+    bass[11] = bass_cell("F#1", vel=0.8, length=0.4)
+    bass[13] = bass_cell("A1",  vel=0.85, length=0.45)
+    bass[14] = bass_cell("E1",  vel=0.8, length=0.4)
     return make_demo(117, 8, 16, default_drum_params(), drum,
                      bass_params(cutoff=0.4, resonance=5.0,
                                  envAmount=0.65, decay=220, drive=0.2),
                      bass, humanize=True)
 
 def demo_superstition():
-    """Funk 100 BPM 16th, bassline sincopata con pause e slide."""
+    """Funk 100 BPM ancorato in E minor (per semplicità di griglia;
+    l'originale è in Eb minor, ma mantenere la stessa famiglia di note
+    permette di usare la stessa tastiera bass on-screen).
+    16th con pause, slide frequenti verso la dominante B1/B2, accent sul
+    downbeat."""
     drum = empty_drum_pattern()
     set_steps(drum[0], [0, 6, 10])                   # kick funky
     set_steps(drum[1], [4, 12], vel=0.9)
     set_steps(drum[2], list(range(0, 16, 2)), vel=0.55)
     set_steps(drum[2], [1, 3, 5, 7, 9, 11, 13, 15], vel=0.35)   # ghost 16th
     bass = empty_bass_pattern()
-    pattern = [
-        ("E1", 0, True, False),
-        ("G1", 2, False, True),
-        ("E1", 3, False, False),
-        ("D1", 5, False, False),
-        ("E1", 7, False, False),
-        ("G1", 8, True, True),
-        ("E1", 9, False, False),
-        ("D1", 11, False, False),
-        ("C1", 13, False, True),
-        ("E1", 14, False, False),
-    ]
-    for note, step, acc, sl in pattern:
-        bass[step] = bass_cell(note, vel=0.85, length=0.35, accent=acc, slide=sl)
+    # E minor: E, G, A, B (dominante). Slide verso B1/B2 caratteristico.
+    bass[0]  = bass_cell("E1", vel=0.95, length=0.35, accent=True)
+    bass[2]  = bass_cell("G1", vel=0.8,  length=0.3)
+    bass[3]  = bass_cell("B1", vel=0.85, length=0.25, slide=True)   # slide to dom
+    bass[5]  = bass_cell("E1", vel=0.78, length=0.3)
+    bass[6]  = bass_cell("A1", vel=0.8,  length=0.3, slide=True)
+    bass[7]  = bass_cell("B1", vel=0.85, length=0.35)
+    bass[8]  = bass_cell("E2", vel=0.95, length=0.35, accent=True)
+    bass[10] = bass_cell("G1", vel=0.8,  length=0.3)
+    bass[11] = bass_cell("B2", vel=0.85, length=0.25, slide=True)
+    bass[13] = bass_cell("E1", vel=0.8,  length=0.3)
+    bass[14] = bass_cell("B1", vel=0.85, length=0.35)
     return make_demo(100, 24, 16, default_drum_params(), drum,
                      bass_params(cutoff=0.5, resonance=6.0,
                                  envAmount=0.75, decay=180, drive=0.35),
                      bass, humanize=True)
 
 def demo_onedrop():
-    """Reggae 80 BPM one-drop: kick e snare insieme sul 3. Bass pulsante 2-4."""
+    """Reggae one-drop 80 BPM in A minor.
+    Pausa sugli step 1-4, bassline A1-E2-A1-G1 dallo step 5, accent sul
+    downbeat del 3 (step 8) dove anche kick+snare cadono (one-drop).
+    Cutoff 0.45, decay 400, resonance 3 per il carattere reggae morbido."""
     drum = empty_drum_pattern()
     drum[0][8] = cell(vel=1.0)                       # kick solo sul 3
     drum[1][8] = cell(vel=0.9)                       # snare sul 3
     set_steps(drum[2], [0, 2, 4, 6, 10, 12, 14], vel=0.55)
     bass = empty_bass_pattern()
-    # reggae skank: pause su 1, attacchi 2 e 4
-    bass[4] = bass_cell("A1", vel=0.85, length=0.7, accent=True)
-    bass[6] = bass_cell("G1", vel=0.75, length=0.3)
-    bass[12] = bass_cell("A1", vel=0.85, length=0.7, accent=True)
-    bass[14] = bass_cell("E1", vel=0.75, length=0.3)
+    # Reggae one-drop: primo quarto (step 1-4) muto, poi A-E-A-G sul resto
+    # A1 tonica, E2 (5° grado sopra), G1 (VII grado) per il carattere dorico
+    # Accent sul downbeat del 3 (step 8) dove anche il kick cade
+    bass[6]  = bass_cell("A1", vel=0.85, length=0.45)
+    bass[8]  = bass_cell("E2", vel=0.95, length=0.5, accent=True)
+    bass[10] = bass_cell("A1", vel=0.85, length=0.45)
+    bass[14] = bass_cell("G1", vel=0.85, length=0.45)
     return make_demo(80, 0, 16, default_drum_params(), drum,
-                     bass_params(cutoff=0.35, resonance=4.5,
-                                 envAmount=0.6, decay=300, drive=0.2),
+                     bass_params(cutoff=0.45, resonance=3.0,
+                                 envAmount=0.6, decay=400, drive=0.2),
                      bass)
 
 def demo_house():
-    """House 124 BPM four-on-the-floor, basso 1/8 con pattern di accenti."""
+    """House 124 BPM in A minor.
+    A1 four-on-the-floor con accent alternati (1 e 9), slide occasionale
+    verso E2 (5° grado). Cutoff 0.55 decay 120 per il carattere pumping
+    del basso house."""
     drum = empty_drum_pattern()
     set_steps(drum[0], [0, 4, 8, 12])                # kick 4/4
     set_steps(drum[1], [4, 12], vel=0.85)
@@ -221,41 +253,50 @@ def demo_house():
     set_steps(drum[3], [6, 14], vel=0.5)             # open hat off
     set_steps(drum[4], [4, 12], vel=0.6)             # clap
     bass = empty_bass_pattern()
-    # 8 note ripetute (eighth) con accent sul 1 e 9
-    for i, s in enumerate([0, 2, 4, 6, 8, 10, 12, 14]):
-        acc = (s in (0, 8))
-        bass[s] = bass_cell("A1" if i % 4 != 2 else "C2",
-                            vel=0.82, length=0.4, accent=acc)
+    # A1 su ogni quarto, accent su 1 e 9; fill verso E2 con slide su step 7 e 15
+    bass[0]  = bass_cell("A1", vel=0.95, length=0.35, accent=True)
+    bass[2]  = bass_cell("A1", vel=0.8,  length=0.3)
+    bass[4]  = bass_cell("A1", vel=0.8,  length=0.3)
+    bass[6]  = bass_cell("A1", vel=0.8,  length=0.3)
+    bass[7]  = bass_cell("E2", vel=0.82, length=0.25, slide=True)   # slide fill
+    bass[8]  = bass_cell("A1", vel=0.95, length=0.35, accent=True)
+    bass[10] = bass_cell("A1", vel=0.8,  length=0.3)
+    bass[12] = bass_cell("A1", vel=0.8,  length=0.3)
+    bass[14] = bass_cell("A1", vel=0.8,  length=0.3)
+    bass[15] = bass_cell("E2", vel=0.82, length=0.25, slide=True)
     return make_demo(124, 0, 16, default_drum_params(), drum,
-                     bass_params(cutoff=0.5, resonance=5.0,
-                                 envAmount=0.65, decay=140, drive=0.25),
+                     bass_params(cutoff=0.55, resonance=5.0,
+                                 envAmount=0.65, decay=120, drive=0.25),
                      bass, humanize=True)
 
 def demo_boombap():
-    """Hip-hop 90 BPM boom-bap, basso con slide alla dominante."""
+    """Hip-hop boom-bap 90 BPM (swing 52) in D minor.
+    D1-D1-F1-A1 con slide verso la dominante, length media 0.4,
+    groove 'lazy' stile Dilla."""
     drum = empty_drum_pattern()
     set_steps(drum[0], [0, 7, 8], vel=1.0)           # kick syncopato
     set_steps(drum[1], [4, 12], vel=0.9)
     set_steps(drum[2], list(range(0, 16, 2)), vel=0.55)
     bass = empty_bass_pattern()
-    pattern = [
-        ("D1", 0, True, False),
-        ("D1", 3, False, False),
-        ("A1", 5, False, True),     # slide
-        ("D1", 7, False, False),
-        ("D1", 8, True, False),
-        ("F1", 11, False, True),    # slide
-        ("D1", 13, False, False),
-    ]
-    for note, step, acc, sl in pattern:
-        bass[step] = bass_cell(note, vel=0.82, length=0.4, accent=acc, slide=sl)
+    # D minor: D tonica, F 3° minore, A 5° (dominante).
+    bass[0]  = bass_cell("D1", vel=0.95, length=0.4, accent=True)
+    bass[3]  = bass_cell("D1", vel=0.8,  length=0.35)
+    bass[5]  = bass_cell("F1", vel=0.82, length=0.35)
+    bass[6]  = bass_cell("A1", vel=0.85, length=0.3, slide=True)   # slide verso A (dom)
+    bass[7]  = bass_cell("F1", vel=0.8,  length=0.3)
+    bass[8]  = bass_cell("D1", vel=0.95, length=0.4, accent=True)
+    bass[11] = bass_cell("F1", vel=0.82, length=0.35)
+    bass[13] = bass_cell("A1", vel=0.85, length=0.3, slide=True)
+    bass[14] = bass_cell("F1", vel=0.8,  length=0.3)
     return make_demo(90, 52, 16, default_drum_params(), drum,
                      bass_params(cutoff=0.38, resonance=4.0,
                                  envAmount=0.55, decay=260, drive=0.3),
                      bass, humanize=True)
 
 def demo_trap():
-    """Trap 140 BPM con ratchet hats e sub-bass 808-style (low + long + drive)."""
+    """Trap 140 BPM in F minor, sub-bass 808-style.
+    F1 lungo length 1.0 su step 1, pause, poi C2 e Eb2 occasionali.
+    Drive 0.6, cutoff 0.25 e resonance media per il carattere 808."""
     dp = default_drum_params()
     # Kick bello grave
     dp[0]["pitch"] = -4
@@ -269,15 +310,17 @@ def demo_trap():
     drum[2][6]  = cell(vel=0.6, ratch=3)
     drum[2][14] = cell(vel=0.6, ratch=4)
     bass = empty_bass_pattern()
-    # Sub 808: note molto basse con decay lungo
-    bass[0]  = bass_cell("C1",  vel=1.0, length=0.9, accent=True)
-    bass[3]  = bass_cell("C1",  vel=0.8, length=0.3)
-    bass[7]  = bass_cell("F1",  vel=0.9, length=0.5, slide=True)
-    bass[8]  = bass_cell("D#1", vel=0.85, length=0.6)
-    bass[12] = bass_cell("A#0", vel=0.95, length=0.9, accent=True)
+    # F minor: F tonica, C 5°, Eb VII minore.
+    # Sub-bass 808 pattern: F1 lungo, pause, poi C2/Eb2 occasionali.
+    bass[0]  = bass_cell("F1",  vel=1.0,  length=1.0, accent=True)   # sub lungo
+    bass[5]  = bass_cell("F1",  vel=0.85, length=0.4)
+    bass[7]  = bass_cell("C2",  vel=0.82, length=0.35, slide=True)
+    bass[8]  = bass_cell("F1",  vel=0.9,  length=0.6)
+    bass[11] = bass_cell("D#2", vel=0.82, length=0.35)  # = Eb2 enarmonico
+    bass[12] = bass_cell("F1",  vel=0.95, length=0.7, accent=True)
     return make_demo(140, 0, 16, dp, drum,
-                     bass_params(cutoff=0.28, resonance=7.0,
-                                 envAmount=0.5, decay=500, drive=0.55),
+                     bass_params(cutoff=0.25, resonance=6.0,
+                                 envAmount=0.5, decay=500, drive=0.6),
                      bass)
 
 # ---------- main ----------

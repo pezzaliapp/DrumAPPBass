@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T20:16:19Z",
+  "exportedAt": "2026-04-24T20:50:36Z",
   "bpm": 110,
   "swing": 0,
   "patternLength": 16,
@@ -753,68 +753,104 @@
       "A": [
         {
           "note": "E1",
-          "vel": 0.85,
-          "len": 0.45,
+          "vel": 0.95,
+          "len": 0.3,
+          "accent": true,
+          "slide": false
+        },
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "E1",
-          "vel": 0.85,
-          "len": 0.45,
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
-        null,
-        {
-          "note": "E1",
-          "vel": 0.85,
-          "len": 0.45,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "E1",
-          "vel": 0.85,
-          "len": 0.45,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "E1",
-          "vel": 0.85,
-          "len": 0.45,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "E1",
-          "vel": 0.85,
-          "len": 0.45,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "E1",
-          "vel": 0.85,
-          "len": 0.45,
-          "accent": false,
-          "slide": false
-        },
-        null,
         {
           "note": "G1",
-          "vel": 0.9,
-          "len": 0.7,
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": true
         },
-        null
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "E1",
+          "vel": 0.95,
+          "len": 0.3,
+          "accent": true,
+          "slide": false
+        },
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        null,
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "G1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": true
+        },
+        {
+          "note": "E1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        }
       ],
       "B": [
         null,

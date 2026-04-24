@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T20:16:19Z",
+  "exportedAt": "2026-04-24T20:50:41Z",
   "bpm": 124,
   "swing": 0,
   "patternLength": 16,
@@ -763,78 +763,90 @@
       "mute": false,
       "solo": false,
       "pan": 0.0,
-      "cutoff": 0.5,
+      "cutoff": 0.55,
       "resonance": 5.0,
       "envAmount": 0.65,
-      "decay": 140,
+      "decay": 120,
       "drive": 0.25
     },
     "patterns": {
       "A": [
         {
           "note": "A1",
-          "vel": 0.82,
-          "len": 0.4,
+          "vel": 0.95,
+          "len": 0.35,
           "accent": true,
           "slide": false
         },
         null,
         {
           "note": "A1",
-          "vel": 0.82,
-          "len": 0.4,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "C2",
-          "vel": 0.82,
-          "len": 0.4,
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "A1",
-          "vel": 0.82,
-          "len": 0.4,
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "A1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "E2",
           "vel": 0.82,
-          "len": 0.4,
+          "len": 0.25,
+          "accent": false,
+          "slide": true
+        },
+        {
+          "note": "A1",
+          "vel": 0.95,
+          "len": 0.35,
           "accent": true,
           "slide": false
         },
         null,
         {
           "note": "A1",
-          "vel": 0.82,
-          "len": 0.4,
-          "accent": false,
-          "slide": false
-        },
-        null,
-        {
-          "note": "C2",
-          "vel": 0.82,
-          "len": 0.4,
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
         null,
         {
           "note": "A1",
-          "vel": 0.82,
-          "len": 0.4,
+          "vel": 0.8,
+          "len": 0.3,
           "accent": false,
           "slide": false
         },
-        null
+        null,
+        {
+          "note": "A1",
+          "vel": 0.8,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "E2",
+          "vel": 0.82,
+          "len": 0.25,
+          "accent": false,
+          "slide": true
+        }
       ],
       "B": [
         null,

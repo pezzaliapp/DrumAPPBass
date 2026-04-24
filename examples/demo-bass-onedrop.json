@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T20:16:19Z",
+  "exportedAt": "2026-04-24T20:50:40Z",
   "bpm": 80,
   "swing": 0,
   "patternLength": 16,
@@ -738,10 +738,10 @@
       "mute": false,
       "solo": false,
       "pan": 0.0,
-      "cutoff": 0.35,
-      "resonance": 4.5,
+      "cutoff": 0.45,
+      "resonance": 3.0,
       "envAmount": 0.6,
-      "decay": 300,
+      "decay": 400,
       "drive": 0.2
     },
     "patterns": {
@@ -750,38 +750,38 @@
         null,
         null,
         null,
+        null,
+        null,
         {
           "note": "A1",
           "vel": 0.85,
-          "len": 0.7,
+          "len": 0.45,
+          "accent": false,
+          "slide": false
+        },
+        null,
+        {
+          "note": "E2",
+          "vel": 0.95,
+          "len": 0.5,
           "accent": true,
           "slide": false
         },
         null,
         {
-          "note": "G1",
-          "vel": 0.75,
-          "len": 0.3,
+          "note": "A1",
+          "vel": 0.85,
+          "len": 0.45,
           "accent": false,
           "slide": false
         },
         null,
         null,
         null,
-        null,
-        null,
         {
-          "note": "A1",
+          "note": "G1",
           "vel": 0.85,
-          "len": 0.7,
-          "accent": true,
-          "slide": false
-        },
-        null,
-        {
-          "note": "E1",
-          "vel": 0.75,
-          "len": 0.3,
+          "len": 0.45,
           "accent": false,
           "slide": false
         },
