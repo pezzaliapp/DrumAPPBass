@@ -1698,3 +1698,56 @@ body::before {
 .atrack--bass {
   border-left: 4px solid var(--bass);
 }
+
+/* Mini selettore nota (long-press 500ms su step bass in NOTE mode) */
+.bass-note-selector {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-shadow: 0 4px 0 var(--ink);
+  max-width: 320px;
+}
+.bass-note-selector__row {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.bass-note-selector__oct {
+  font-family: var(--f-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--bass);
+  min-width: 34px;
+  text-align: center;
+}
+.bass-note-selector__btn {
+  min-width: 22px;
+  min-height: 28px;
+  padding: 2px 4px;
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  background: #fdf7e6;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.bass-note-selector__btn--black {
+  background: #1a1a22;
+  color: #fdf7e6;
+}
+.bass-note-selector__btn--on {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent-deep);
+  font-weight: bold;
+}
+.bass-note-selector__btn:hover {
+  background: var(--bass);
+  color: #fff;
+}

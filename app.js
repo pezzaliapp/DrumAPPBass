@@ -1194,17 +1194,16 @@
 
     btn.addEventListener('pointerdown', (e) => {
       unlockAudio();
-      btn.setPointerCapture(e.pointerId);
       didDrag = false;
-      const cell = patterns[currentPattern][trackIdx][stepIdx];
 
       if (editMode === 'trig') {
-        // Toggle
+        // TRIG: toggle secco on/off. Nessun setPointerCapture (non serve, e
+        // su alcuni browser può lanciare eccezioni interrompendo il toggle).
+        const cell = patterns[currentPattern][trackIdx][stepIdx];
         if (cell) {
           patterns[currentPattern][trackIdx][stepIdx] = null;
         } else {
           patterns[currentPattern][trackIdx][stepIdx] = newCell();
-          // preview
           if (audioCtx) {
             VOICES[TRACK_DEFS[trackIdx].id](audioCtx.currentTime, {
               trackIdx, pitch: trackParams[trackIdx].pitch,
@@ -1214,18 +1213,21 @@
         }
         refreshStep(trackIdx, stepIdx);
         pushHistory();
-      } else {
-        // Modalità drag-to-edit
-        if (!cell) {
-          patterns[currentPattern][trackIdx][stepIdx] = newCell();
-        }
-        dragStartY = e.clientY;
-        const c = patterns[currentPattern][trackIdx][stepIdx];
-        dragStartValue = {
-          vel: c.vel, prob: c.prob, ratch: c.ratch, nudge: c.nudge
-        };
-        refreshStep(trackIdx, stepIdx);
+        return;
       }
+
+      // VEL / PROB / RATCH / NUDGE: drag-to-edit
+      try { btn.setPointerCapture(e.pointerId); } catch (err) { /* safari antico */ }
+      const cell = patterns[currentPattern][trackIdx][stepIdx];
+      if (!cell) {
+        patterns[currentPattern][trackIdx][stepIdx] = newCell();
+      }
+      dragStartY = e.clientY;
+      const c = patterns[currentPattern][trackIdx][stepIdx];
+      dragStartValue = {
+        vel: c.vel, prob: c.prob, ratch: c.ratch, nudge: c.nudge
+      };
+      refreshStep(trackIdx, stepIdx);
     });
 
     btn.addEventListener('pointermove', (e) => {
@@ -1811,27 +1813,112 @@
     }
   }
 
+  /**
+   * Handler step bass: distingue TAP, DRAG verticale e LONG-PRESS (500 ms).
+   * Decide l'azione al pointerup in base a cosa è successo durante il gesto,
+   * così il toggle on/off non viene consumato prima del tempo dal drag.
+   *
+   *   NOTE mode:
+   *     - tap breve su cella attiva → toggle off (cella -> null)
+   *     - tap breve su cella spenta → toggle on (cella -> C2 default)
+   *     - drag verticale su cella attiva → cambia pitch C1..B3
+   *     - wheel su cella attiva → cambia pitch di 1 semitono
+   *     - long-press 500 ms → apre mini-selettore di nota C1..B3
+   *   VEL / LEN mode:
+   *     - drag verticale su cella attiva → cambia parametro
+   *     - tap su cella spenta → NO-OP (devi prima accenderla in NOTE)
+   *   ACC / SLIDE mode:
+   *     - tap su cella attiva → toggle flag
+   *     - tap su cella spenta → NO-OP
+   */
   function attachBassStepHandlers(btn, stepIdx) {
     let dragStartY = null;
     let dragStartValue = null;
     let didDrag = false;
+    let longpressTimer = null;
+    let longpressFired = false;
+
+    const cancelLongpress = () => {
+      if (longpressTimer) { clearTimeout(longpressTimer); longpressTimer = null; }
+    };
 
     btn.addEventListener('pointerdown', (e) => {
       unlockAudio();
       if (bassMode === 'looper') return; // readonly durante LOOPER
-      btn.setPointerCapture(e.pointerId);
       didDrag = false;
+      longpressFired = false;
+
       const cell = bassPatterns[currentPattern][stepIdx];
 
+      // Long-press apre il selettore nota (solo NOTE mode + cella attiva)
+      if (bassEditMode === 'note' && cell) {
+        longpressTimer = setTimeout(() => {
+          longpressTimer = null;
+          longpressFired = true;
+          openBassNoteSelector(stepIdx);
+        }, 500);
+      }
+
+      // Arma drag se la cella è attiva E il mode supporta drag
+      const dragModes = ['note', 'vel', 'len'];
+      if (cell && dragModes.indexOf(bassEditMode) !== -1) {
+        try { btn.setPointerCapture(e.pointerId); } catch (err) { /* safari antico */ }
+        dragStartY = e.clientY;
+        dragStartValue = { vel: cell.vel, len: cell.len, midi: noteToMidi(cell.note) };
+      }
+    });
+
+    btn.addEventListener('pointermove', (e) => {
+      if (bassMode === 'looper') return;
+      if (dragStartY === null) return;
+      const dy = dragStartY - e.clientY;
+      if (Math.abs(dy) > 3) {
+        didDrag = true;
+        cancelLongpress();
+      }
+      const cell = bassPatterns[currentPattern][stepIdx];
+      if (!cell) return;
+
+      if (bassEditMode === 'vel') {
+        cell.vel = clamp(dragStartValue.vel + dy / 120, 0.05, 1);
+      } else if (bassEditMode === 'len') {
+        cell.len = clamp(dragStartValue.len + dy / 120, 0.1, 1);
+      } else if (bassEditMode === 'note') {
+        const deltaSemi = Math.round(dy / 8);
+        const newMidi = clamp(dragStartValue.midi + deltaSemi, noteToMidi('C1'), noteToMidi('B3'));
+        cell.note = midiToNote(newMidi);
+      }
+      refreshBassStep(stepIdx);
+      updateBassHint(stepIdx);
+    });
+
+    btn.addEventListener('pointerup', () => {
+      cancelLongpress();
+      if (bassMode === 'looper') return;
+      const wasDragging = dragStartY !== null && didDrag;
+      dragStartY = null;
+      dragStartValue = null;
+
+      // Se il longpress ha già aperto il selettore, non fare altro
+      if (longpressFired) return;
+
+      const cell = bassPatterns[currentPattern][stepIdx];
+
+      if (wasDragging) {
+        pushHistory();
+        return;
+      }
+
+      // Tap breve: decidi in base all'edit mode
       if (bassEditMode === 'note') {
-        // Toggle on/off
         if (cell) {
+          // Toggle OFF
           bassPatterns[currentPattern][stepIdx] = null;
         } else {
+          // Toggle ON con default C2
           bassPatterns[currentPattern][stepIdx] = {
             note: BASS_DEFAULT_NOTE, vel: 0.9, len: 0.5, accent: false, slide: false,
           };
-          // preview
           if (audioCtx) {
             playBassNote(audioCtx.currentTime, {
               note: BASS_DEFAULT_NOTE, vel: 0.9, len: 0.5,
@@ -1840,84 +1927,35 @@
           }
         }
         refreshBassStep(stepIdx);
-        // Drag verticale cambia pitch (per comodità anche in NOTE mode quando il cell esiste)
-        dragStartY = e.clientY;
-        const c = bassPatterns[currentPattern][stepIdx];
-        if (c) dragStartValue = { midi: noteToMidi(c.note) };
         pushHistory();
       } else if (bassEditMode === 'acc') {
-        if (!cell) {
-          bassPatterns[currentPattern][stepIdx] = {
-            note: BASS_DEFAULT_NOTE, vel: 0.9, len: 0.5, accent: true, slide: false,
-          };
-        } else {
+        if (cell) {
           cell.accent = !cell.accent;
+          refreshBassStep(stepIdx);
+          pushHistory();
         }
-        refreshBassStep(stepIdx);
-        pushHistory();
       } else if (bassEditMode === 'slide') {
-        if (!cell) {
-          bassPatterns[currentPattern][stepIdx] = {
-            note: BASS_DEFAULT_NOTE, vel: 0.9, len: 0.5, accent: false, slide: true,
-          };
-        } else {
+        if (cell) {
           cell.slide = !cell.slide;
+          refreshBassStep(stepIdx);
+          refreshBassStep((stepIdx + 1) % patternLength);
+          pushHistory();
         }
-        refreshBassStep(stepIdx);
-        // Ridisegna anche lo step successivo per eventuale freccia slide
-        refreshBassStep((stepIdx + 1) % patternLength);
-        pushHistory();
-      } else {
-        // VEL / LEN: drag
-        if (!cell) {
-          bassPatterns[currentPattern][stepIdx] = {
-            note: BASS_DEFAULT_NOTE, vel: 0.9, len: 0.5, accent: false, slide: false,
-          };
-        }
-        dragStartY = e.clientY;
-        const c = bassPatterns[currentPattern][stepIdx];
-        dragStartValue = { vel: c.vel, len: c.len, midi: noteToMidi(c.note) };
-        refreshBassStep(stepIdx);
       }
+      // VEL / LEN: tap su cella spenta = NO-OP (volutamente)
     });
 
-    btn.addEventListener('pointermove', (e) => {
-      if (dragStartY === null) return;
-      if (bassMode === 'looper') return;
-      const dy = dragStartY - e.clientY; // up positivo
-      if (Math.abs(dy) > 3) didDrag = true;
-      const cell = bassPatterns[currentPattern][stepIdx];
-      if (!cell) return;
-
-      if (bassEditMode === 'vel') {
-        cell.vel = clamp((dragStartValue.vel || 0.9) + dy / 120, 0.05, 1);
-      } else if (bassEditMode === 'len') {
-        cell.len = clamp((dragStartValue.len || 0.5) + dy / 120, 0.1, 1);
-      } else if (bassEditMode === 'note') {
-        // drag verticale per cambiare pitch ±3 ottave rispetto all'iniziale
-        const startMidi = dragStartValue ? dragStartValue.midi : noteToMidi(cell.note);
-        const deltaSemi = Math.round(dy / 8);
-        const newMidi = clamp(startMidi + deltaSemi, noteToMidi('C1'), noteToMidi('B3'));
-        cell.note = midiToNote(newMidi);
-      }
-      refreshBassStep(stepIdx);
-      updateBassHint(stepIdx);
-    });
-
-    btn.addEventListener('pointerup', () => {
-      if (dragStartY !== null) {
-        dragStartY = null;
-        dragStartValue = null;
-        if (didDrag) pushHistory();
-      }
-    });
     btn.addEventListener('pointercancel', () => {
-      dragStartY = null; dragStartValue = null;
+      cancelLongpress();
+      dragStartY = null;
+      dragStartValue = null;
+      longpressFired = false;
     });
 
-    // Scroll wheel sullo step (desktop) per cambiare pitch rapidamente
+    // Scroll wheel (desktop): cambia pitch di 1 semitono per notch
     btn.addEventListener('wheel', (e) => {
       if (bassMode === 'looper') return;
+      if (bassEditMode !== 'note') return;
       const cell = bassPatterns[currentPattern][stepIdx];
       if (!cell) return;
       e.preventDefault();
@@ -1928,6 +1966,79 @@
       refreshBassStep(stepIdx);
       pushHistory();
     }, { passive: false });
+  }
+
+  // ---------- Mini note selector (long-press) ----------
+  function openBassNoteSelector(stepIdx) {
+    closeBassNoteSelector();
+    const cell = bassPatterns[currentPattern][stepIdx];
+    if (!cell) return;
+    const anchor = bassStepElements[stepIdx];
+    if (!anchor) return;
+
+    const pop = document.createElement('div');
+    pop.className = 'bass-note-selector';
+    pop.id = '_bassNoteSelector';
+
+    for (let oct = 3; oct >= 1; oct--) {
+      const row = document.createElement('div');
+      row.className = 'bass-note-selector__row';
+      const lbl = document.createElement('span');
+      lbl.className = 'bass-note-selector__oct';
+      lbl.textContent = 'OCT' + oct;
+      row.appendChild(lbl);
+      for (let n = 0; n < 12; n++) {
+        const noteName = NOTE_NAMES[n] + oct;
+        const nb = document.createElement('button');
+        nb.type = 'button';
+        nb.className = 'bass-note-selector__btn' +
+          (NOTE_NAMES[n].indexOf('#') !== -1 ? ' bass-note-selector__btn--black' : '');
+        if (noteName === cell.note) nb.classList.add('bass-note-selector__btn--on');
+        nb.textContent = NOTE_NAMES[n];
+        nb.addEventListener('pointerdown', (ev) => {
+          ev.stopPropagation();
+          ev.preventDefault();
+          cell.note = noteName;
+          refreshBassStep(stepIdx);
+          pushHistory();
+          closeBassNoteSelector();
+        });
+        row.appendChild(nb);
+      }
+      pop.appendChild(row);
+    }
+
+    document.body.appendChild(pop);
+    const rect = anchor.getBoundingClientRect();
+    pop.style.position = 'fixed';
+    let left = rect.left - 40;
+    const maxLeft = window.innerWidth - 330;
+    if (left < 8) left = 8;
+    if (left > maxLeft) left = Math.max(8, maxLeft);
+    pop.style.left = left + 'px';
+    let top = rect.bottom + 4;
+    if (top + 140 > window.innerHeight) top = rect.top - 144;
+    pop.style.top = top + 'px';
+    pop.style.zIndex = '9999';
+
+    setTimeout(() => {
+      document.addEventListener('pointerdown', closeBassNoteSelectorOnOutside);
+    }, 0);
+  }
+
+  function closeBassNoteSelectorOnOutside(e) {
+    const pop = document.getElementById('_bassNoteSelector');
+    if (!pop) {
+      document.removeEventListener('pointerdown', closeBassNoteSelectorOnOutside);
+      return;
+    }
+    if (!pop.contains(e.target)) closeBassNoteSelector();
+  }
+
+  function closeBassNoteSelector() {
+    const pop = document.getElementById('_bassNoteSelector');
+    if (pop) pop.remove();
+    document.removeEventListener('pointerdown', closeBassNoteSelectorOnOutside);
   }
 
   function refreshBassStep(stepIdx) {
