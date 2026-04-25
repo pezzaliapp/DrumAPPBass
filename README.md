@@ -2,7 +2,9 @@
 
 **Fork esteso di [DrumAPP](https://github.com/pezzaliapp/DrumAPP)** che aggiunge una sezione **BASS** completamente sintetizzata in Web Audio: step sequencer dedicato con accent e slide (stile TB-303), looper live con tastiera on-screen e shortcut pianistiche. Tutto il resto di DrumAPP — 8 voci drum, swing, velocity/probability/ratchet/nudge, pan/pitch/decay/filter per traccia, 4 pattern live, song mode, bounce WAV, REC live, Web MIDI out, undo/redo — resta identico e perfettamente funzionante.
 
-**Demo live:** [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/)
+**Demo live:**
+- [www.alessandropezzali.it/DrumAPPBass](https://www.alessandropezzali.it/DrumAPPBass/) — sotto il dominio dell'autore (consigliato)
+- [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/) — versione canonica GitHub Pages (sempre allineata al main)
 
 > Prima volta qui? Premi il bottone **?** nel footer (o il tasto `?`) per aprire la guida integrata con tutte le istruzioni passo-passo, inclusa la nuova sezione BASS.
 

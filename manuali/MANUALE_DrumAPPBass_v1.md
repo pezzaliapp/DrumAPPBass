@@ -11,7 +11,7 @@
 **Autore:** Alessandro Pezzali — `pezzaliapp`
 **Sito:** [pezzaliapp.com](https://pezzaliapp.com)
 **Repository:** [github.com/pezzaliapp/DrumAPPBass](https://github.com/pezzaliapp/DrumAPPBass)
-**App live:** [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/)
+**App live:** [www.alessandropezzali.it/DrumAPPBass](https://www.alessandropezzali.it/DrumAPPBass/) · mirror canonico [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/)
 **Licenza:** MIT
 
 ---
@@ -650,7 +650,9 @@ No, e non è prevista. La filosofia "vive nel browser" è un pilastro del proget
 
 ### 13.1 Link
 
-- **App live:** [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/) — versione canonica, sempre aggiornata.
+- **App live:**
+  - [www.alessandropezzali.it/DrumAPPBass](https://www.alessandropezzali.it/DrumAPPBass/) — sotto il dominio dell'autore (consigliato per condivisione).
+  - [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/) — versione canonica GitHub Pages, sempre allineata al main.
 - **Repository:** [github.com/pezzaliapp/DrumAPPBass](https://github.com/pezzaliapp/DrumAPPBass) — codice sorgente, demo, changelog.
 - **Sito autore:** [pezzaliapp.com](https://pezzaliapp.com)
 - **DrumAPP originale:** [github.com/pezzaliapp/DrumAPP](https://github.com/pezzaliapp/DrumAPP) — il progetto da cui DrumAPPBass è stato forkato.

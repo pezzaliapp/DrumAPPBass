@@ -285,7 +285,7 @@ meta_rows = [
     ('Autore', 'Alessandro Pezzali — pezzaliapp'),
     ('Sito', 'pezzaliapp.com'),
     ('Repository', 'github.com/pezzaliapp/DrumAPPBass'),
-    ('App live', 'pezzaliapp.github.io/DrumAPPBass'),
+    ('App live', 'www.alessandropezzali.it/DrumAPPBass · pezzaliapp.github.io/DrumAPPBass'),
     ('Licenza', 'MIT'),
 ]
 for i, (k, v) in enumerate(meta_rows):
@@ -1274,7 +1274,8 @@ page_break()
 H1('13. Risorse, licenza e contatti')
 
 H2('13.1 Link')
-bullet('App live: pezzaliapp.github.io/DrumAPPBass — versione canonica, sempre aggiornata.')
+bullet('App live: www.alessandropezzali.it/DrumAPPBass — sotto il dominio dell\'autore (consigliato per condivisione).')
+bullet('App live (mirror canonico): pezzaliapp.github.io/DrumAPPBass — GitHub Pages, sempre allineato al main.')
 bullet('Repository: github.com/pezzaliapp/DrumAPPBass — codice sorgente, demo, changelog.')
 bullet('Sito autore: pezzaliapp.com')
 bullet('DrumAPP originale: github.com/pezzaliapp/DrumAPP — il progetto da cui DrumAPPBass è stato forkato.')
