@@ -220,7 +220,17 @@
   let bassLastSchedulerBase = 0;
 
   /** Per gestire la continuità dello slide (ultima voce ancora attiva) */
-  let bassLastVoice = null;   // { osc1, osc2, gain, filter, endTime, note, slideNext }
+  let bassLastVoice = null;   // { osc1Stack, osc2, gain, filter, endTime, note, slideNext }
+
+  // ============================================================
+  // SUPERSAW STACK: 5 voci sawtooth detunate, simmetrico ±10c.
+  // Detune fisso + gain normalizzato (somma ≈ 1.0, voce centrale dominante).
+  // Range moderato per bass: detune più estremo crea "pad", non "bass".
+  // Le 5 voci si sfasano naturalmente nel tempo per le diverse frequenze
+  // effettive — si crea il classico chorus/movimento del JP-8000.
+  // ============================================================
+  const SUPERSAW_DETUNES = [-10, -5, 0, 5, 10];           // cents
+  const SUPERSAW_GAINS   = [0.147, 0.206, 0.294, 0.206, 0.147]; // sum = 1.0
   let bassSolo = () => bassParams.solo; // shortcut
 
   /** DOM cache bass */
@@ -725,19 +735,24 @@
     if (bassLastVoice && bassLastVoice.endTime > time && !p.slideFromVoice) {
       try { bassLastVoice.gain.gain.cancelScheduledValues(time); } catch(e){}
       bassLastVoice.gain.gain.setTargetAtTime(0.0001, time, 0.01);
-      try { bassLastVoice.osc1.stop(time + 0.05); } catch(e){}
+      for (const o of bassLastVoice.osc1Stack) {
+        try { o.stop(time + 0.05); } catch(e){}
+      }
       if (bassLastVoice.osc2) { try { bassLastVoice.osc2.stop(time + 0.05); } catch(e){} }
       bassLastVoice = null;
     }
 
     // Se c'è tie-slide dalla voce precedente, NON creiamo una nuova voce:
-    // pitch-ramp sulla voce esistente.
+    // pitch-ramp sulle voci esistenti (tutto lo stack supersaw + sub).
     if (p.slideFromVoice && bassLastVoice) {
       const v = bassLastVoice;
-      // Glide 30 ms
-      try { v.osc1.frequency.cancelScheduledValues(time); } catch(e){}
-      v.osc1.frequency.setValueAtTime(v.osc1.frequency.value, time);
-      v.osc1.frequency.linearRampToValueAtTime(freq, time + 0.030);
+      // Glide 30 ms su tutte le voci dello stack supersaw.
+      // Il detune cent rimane fisso, ramp solo sulla frequenza fondamentale.
+      for (const o of v.osc1Stack) {
+        try { o.frequency.cancelScheduledValues(time); } catch(e){}
+        o.frequency.setValueAtTime(o.frequency.value, time);
+        o.frequency.linearRampToValueAtTime(freq, time + 0.030);
+      }
       // osc2 può essere null se la voce è stata creata sotto C2 (sub disabilitato)
       if (v.osc2) {
         try { v.osc2.frequency.cancelScheduledValues(time); } catch(e){}
@@ -756,19 +771,31 @@
       v.endTime = releaseAt + 0.08;
       v.note = p.note;
       v.slideNext = !!p.willSlideNext;
-      // Osc stop va spostato
-      try { v.osc1.stop(releaseAt + 0.12); } catch(e){}
+      // Osc stop va spostato per tutto lo stack
+      for (const o of v.osc1Stack) {
+        try { o.stop(releaseAt + 0.12); } catch(e){}
+      }
       if (v.osc2) { try { v.osc2.stop(releaseAt + 0.12); } catch(e){} }
       return v;
     }
 
-    // Nuova voce. Niente detune: il bass è monofonico, le voci non si
-    // sovrappongono mai (la precedente è chiusa al trigger della successiva
-    // tranne in slide), quindi non c'è rischio di phase-stack. Pitch lock
-    // assoluto = bass più "stabile" e definito.
-    const osc1 = audioCtx.createOscillator();
-    osc1.type = 'sawtooth';
-    osc1.frequency.setValueAtTime(freq, time);
+    // === SUPERSAW STACK: 5 saw detunate ±10c con gain normalizzato ===
+    // Le voci esterne (±10c) hanno gain inferiore, la centrale (0c) domina.
+    // Nessuna phase offset esplicita: le diverse frequenze effettive sfasano
+    // naturalmente nel tempo, creando il movimento del JP-8000 supersaw.
+    const osc1Stack = [];
+    const stackMix = audioCtx.createGain();
+    stackMix.gain.value = 1.0;
+    for (let i = 0; i < SUPERSAW_DETUNES.length; i++) {
+      const o = audioCtx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(freq, time);
+      o.detune.value = SUPERSAW_DETUNES[i];
+      const vGain = audioCtx.createGain();
+      vGain.gain.value = SUPERSAW_GAINS[i];
+      o.connect(vGain).connect(stackMix);
+      osc1Stack.push(o);
+    }
 
     let osc2 = null;
     let mixSub = null;
@@ -811,32 +838,52 @@
     const envMaxClamped = Math.max(40, Math.min(8000, envMax));
     const decaySec = Math.max(0.06, Math.min(0.8, bassParams.decay / 1000));
 
+    // RESONANCE DYNAMICS: la Q del filter scala con velocity, accent e nota.
+    //   velQBoost: 0.5 + 0.5*vel  -> vel 0.05 ≈ 0.525, vel 1.0 = 1.0
+    //   accent:    +30% Q sui colpi accentati (stile 303)
+    //   rolloff:   sopra A2 (MIDI 45) abbassa la Q del 15% per ottava per
+    //              evitare auto-oscillazione del Biquad LP sulle note alte
+    //   clamp:     [0.5, 14] per safety (>15 il filtro auto-oscilla)
+    const baseQ = bassParams.resonance;
+    const velQBoost = 0.5 + 0.5 * velBase;
+    const accentQBoost = accent ? 1.3 : 1.0;
+    const noteRolloff = noteMidi > 45 ? Math.pow(0.85, (noteMidi - 45) / 12) : 1.0;
+    const dynamicQ = Math.max(0.5, Math.min(14, baseQ * velQBoost * accentQBoost * noteRolloff));
+
     // Un filter dedicato per questa voce, in serie con bassFilter globale (che
     // in realtà usiamo come "color/res" sempre attivo sul bus). Semplifichiamo
     // usando direttamente bassFilter come filter modulato:
     // automatizziamo la frequency del bassFilter per questa nota.
     const fFreq = bassFilter.frequency;
+    const fQ = bassFilter.Q;
     try { fFreq.cancelScheduledValues(time); } catch(e){}
+    try { fQ.cancelScheduledValues(time); } catch(e){}
     fFreq.setValueAtTime(baseHz, time);
     fFreq.linearRampToValueAtTime(envMaxClamped, time + 0.002);
     fFreq.exponentialRampToValueAtTime(Math.max(50, baseHz), time + 0.002 + decaySec);
+    // Q sale rapidamente al picco dinamico in 5 ms, sustain, settle al base
+    fQ.setValueAtTime(baseQ, time);
+    fQ.linearRampToValueAtTime(dynamicQ, time + 0.005);
     // release (dopo releaseAt)
     fFreq.setTargetAtTime(baseHz, releaseAt, 0.05);
+    fQ.setTargetAtTime(baseQ, releaseAt, 0.05);
 
-    // Routing
-    osc1.connect(mixSaw).connect(gate);
+    // Routing: stack supersaw -> mixSaw -> gate, sub -> mixSub -> gate
+    stackMix.connect(mixSaw).connect(gate);
     if (osc2 && mixSub) osc2.connect(mixSub).connect(gate);
     gate.connect(bassIn());
 
-    osc1.start(time);
-    osc1.stop(releaseAt + 0.12);
+    for (const o of osc1Stack) {
+      o.start(time);
+      o.stop(releaseAt + 0.12);
+    }
     if (osc2) {
       osc2.start(time);
       osc2.stop(releaseAt + 0.12);
     }
 
     const voice = {
-      osc1, osc2, gain: gate, endTime: releaseAt + 0.1,
+      osc1Stack, osc2, gain: gate, endTime: releaseAt + 0.1,
       note: p.note, slideNext: !!p.willSlideNext,
     };
     bassLastVoice = voice;
@@ -1065,7 +1112,9 @@
     // Stop basso eventualmente attivo
     if (bassLastVoice && audioCtx) {
       try { bassLastVoice.gain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.02); } catch(e){}
-      try { bassLastVoice.osc1.stop(audioCtx.currentTime + 0.1); } catch(e){}
+      for (const o of bassLastVoice.osc1Stack) {
+        try { o.stop(audioCtx.currentTime + 0.1); } catch(e){}
+      }
       if (bassLastVoice.osc2) { try { bassLastVoice.osc2.stop(audioCtx.currentTime + 0.1); } catch(e){} }
       bassLastVoice = null;
     }
@@ -2362,7 +2411,9 @@
     // Chiudi voce
     if (bassLastVoice) {
       try { bassLastVoice.gain.gain.setTargetAtTime(0.0001, now, 0.02); } catch(e){}
-      try { bassLastVoice.osc1.stop(now + 0.1); } catch(e){}
+      for (const o of bassLastVoice.osc1Stack) {
+        try { o.stop(now + 0.1); } catch(e){}
+      }
       if (bassLastVoice.osc2) { try { bassLastVoice.osc2.stop(now + 0.1); } catch(e){} }
       bassLastVoice = null;
     }
@@ -3109,7 +3160,7 @@
   }
 
   /** Suona una nota bass in offline. Replica fedelmente la sintesi runtime:
-      hard cutoff sub a C2, niente detune, niente compressore. */
+      supersaw stack 5 voci, hard cutoff sub a C2, Q dinamica per nota. */
   function playBassOffline(ctx, chain, time, p) {
     const freq = noteToFreq(p.note);
     const subFreq = freq / 2;
@@ -3119,9 +3170,20 @@
     const velBase = Math.max(0.05, Math.min(1, p.vel));
     const peakGain = velBase * (accent ? 1.2 : 1.0);
 
-    const osc1 = ctx.createOscillator();
-    osc1.type = 'sawtooth';
-    osc1.frequency.setValueAtTime(freq, time);
+    // Stack supersaw 5 voci (parità col runtime)
+    const osc1Stack = [];
+    const stackMix = ctx.createGain();
+    stackMix.gain.value = 1.0;
+    for (let i = 0; i < SUPERSAW_DETUNES.length; i++) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(freq, time);
+      o.detune.value = SUPERSAW_DETUNES[i];
+      const vGain = ctx.createGain();
+      vGain.gain.value = SUPERSAW_GAINS[i];
+      o.connect(vGain).connect(stackMix);
+      osc1Stack.push(o);
+    }
 
     let osc2 = null;
     let mix2 = null;
@@ -3145,7 +3207,7 @@
     gate.gain.setTargetAtTime(peakGain * 0.7, time + 0.04, 0.08);
     gate.gain.setTargetAtTime(0.0001, releaseAt, 0.03);
 
-    // Filter env scalato per velocity (parità col runtime)
+    // Filter env scalato per velocity + Q dynamics (parità col runtime)
     const baseHz = 50 * Math.pow(100, bassParams.cutoff);
     const envScale = velBase * (accent ? 2 : 1);
     const envMax = bassParams.envAmount >= 0
@@ -3154,24 +3216,35 @@
     const envMaxClamped = Math.max(40, Math.min(8000, envMax));
     const decaySec = Math.max(0.06, Math.min(0.8, bassParams.decay / 1000));
 
+    const baseQ = bassParams.resonance;
+    const velQBoost = 0.5 + 0.5 * velBase;
+    const accentQBoost = accent ? 1.3 : 1.0;
+    const noteRolloff = noteMidi > 45 ? Math.pow(0.85, (noteMidi - 45) / 12) : 1.0;
+    const dynamicQ = Math.max(0.5, Math.min(14, baseQ * velQBoost * accentQBoost * noteRolloff));
+
     const f = chain.filter.frequency;
+    const fQ = chain.filter.Q;
     f.setValueAtTime(baseHz, time);
+    fQ.setValueAtTime(baseQ, time);
     if (!p.slideFrom) {
       f.linearRampToValueAtTime(envMaxClamped, time + 0.002);
       f.exponentialRampToValueAtTime(Math.max(50, baseHz), time + 0.002 + decaySec);
+      fQ.linearRampToValueAtTime(dynamicQ, time + 0.005);
     } else {
-      // Tie-slide: non ri-triggera env filtro (rampa lineare pitch sulle osc)
-      // (gli osc di nota precedente offline non esistono, simuliamo mantenendo
-      //  il cutoff costante su questa nota)
+      // Tie-slide: env filtro non ri-triggera; offline gli osc precedenti
+      // non esistono, manteniamo il cutoff stabile su questa nota.
     }
     f.setTargetAtTime(baseHz, releaseAt, 0.05);
+    fQ.setTargetAtTime(baseQ, releaseAt, 0.05);
 
-    osc1.connect(mix1).connect(gate);
+    stackMix.connect(mix1).connect(gate);
     if (osc2 && mix2) osc2.connect(mix2).connect(gate);
     gate.connect(chain.input);
 
-    osc1.start(time);
-    osc1.stop(releaseAt + 0.12);
+    for (const o of osc1Stack) {
+      o.start(time);
+      o.stop(releaseAt + 0.12);
+    }
     if (osc2) {
       osc2.start(time);
       osc2.stop(releaseAt + 0.12);
