@@ -700,6 +700,9 @@
 
     const freq = noteToFreq(p.note);
     const subFreq = freq / 2; // -12 st = sub-ottava
+    // Sub disabled below C2 to prevent inaudible rumble that beats with the kick fundamental
+    const noteMidi = noteToMidi(p.note);
+    const useSub = noteMidi >= 36; // C2 = MIDI 36
 
     const accent = !!p.accent;
     const velBase = Math.max(0.05, Math.min(1, p.vel));
@@ -711,7 +714,7 @@
       try { bassLastVoice.gain.gain.cancelScheduledValues(time); } catch(e){}
       bassLastVoice.gain.gain.setTargetAtTime(0.0001, time, 0.01);
       try { bassLastVoice.osc1.stop(time + 0.05); } catch(e){}
-      try { bassLastVoice.osc2.stop(time + 0.05); } catch(e){}
+      if (bassLastVoice.osc2) { try { bassLastVoice.osc2.stop(time + 0.05); } catch(e){} }
       bassLastVoice = null;
     }
 
@@ -721,11 +724,14 @@
       const v = bassLastVoice;
       // Glide 30 ms
       try { v.osc1.frequency.cancelScheduledValues(time); } catch(e){}
-      try { v.osc2.frequency.cancelScheduledValues(time); } catch(e){}
       v.osc1.frequency.setValueAtTime(v.osc1.frequency.value, time);
-      v.osc2.frequency.setValueAtTime(v.osc2.frequency.value, time);
       v.osc1.frequency.linearRampToValueAtTime(freq, time + 0.030);
-      v.osc2.frequency.linearRampToValueAtTime(subFreq, time + 0.030);
+      // osc2 può essere null se la voce è stata creata sotto C2 (sub disabilitato)
+      if (v.osc2) {
+        try { v.osc2.frequency.cancelScheduledValues(time); } catch(e){}
+        v.osc2.frequency.setValueAtTime(v.osc2.frequency.value, time);
+        v.osc2.frequency.linearRampToValueAtTime(subFreq, time + 0.030);
+      }
 
       // Aggiorna il gate amp decay per la durata della nuova nota (non
       // ri-triggera env filtro come 303). La sustain resta.
@@ -740,7 +746,7 @@
       v.slideNext = !!p.willSlideNext;
       // Osc stop va spostato
       try { v.osc1.stop(releaseAt + 0.12); } catch(e){}
-      try { v.osc2.stop(releaseAt + 0.12); } catch(e){}
+      if (v.osc2) { try { v.osc2.stop(releaseAt + 0.12); } catch(e){} }
       return v;
     }
 
@@ -749,15 +755,22 @@
     osc1.type = 'sawtooth';
     osc1.frequency.setValueAtTime(freq, time);
 
-    const osc2 = audioCtx.createOscillator();
-    osc2.type = 'square';
-    osc2.frequency.setValueAtTime(subFreq, time);
+    // Sub disabled below C2 to prevent inaudible rumble that beats with the kick fundamental
+    let osc2 = null;
+    let mixSub = null;
+    if (useSub) {
+      osc2 = audioCtx.createOscillator();
+      osc2.type = 'square';
+      osc2.frequency.setValueAtTime(subFreq, time);
+    }
 
-    // Mixer delle due osc (70/30)
+    // Mixer (70% saw + 30% sub se attivo, altrimenti 100% saw)
     const mixSaw = audioCtx.createGain();
-    mixSaw.gain.value = 0.7;
-    const mixSub = audioCtx.createGain();
-    mixSub.gain.value = 0.3;
+    mixSaw.gain.value = useSub ? 0.7 : 1.0;
+    if (useSub) {
+      mixSub = audioCtx.createGain();
+      mixSub.gain.value = 0.3;
+    }
 
     // Envelope di ampiezza: A 3ms, D=len*stepDur, S 0.7, R 60ms
     const gate = audioCtx.createGain();
@@ -795,11 +808,15 @@
 
     // Routing
     osc1.connect(mixSaw).connect(gate);
-    osc2.connect(mixSub).connect(gate);
+    if (osc2 && mixSub) osc2.connect(mixSub).connect(gate);
     gate.connect(bassIn());
 
-    osc1.start(time); osc2.start(time);
-    osc1.stop(releaseAt + 0.12); osc2.stop(releaseAt + 0.12);
+    osc1.start(time);
+    osc1.stop(releaseAt + 0.12);
+    if (osc2) {
+      osc2.start(time);
+      osc2.stop(releaseAt + 0.12);
+    }
 
     const voice = {
       osc1, osc2, gain: gate, endTime: releaseAt + 0.1,
@@ -1027,7 +1044,7 @@
     if (bassLastVoice && audioCtx) {
       try { bassLastVoice.gain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.02); } catch(e){}
       try { bassLastVoice.osc1.stop(audioCtx.currentTime + 0.1); } catch(e){}
-      try { bassLastVoice.osc2.stop(audioCtx.currentTime + 0.1); } catch(e){}
+      if (bassLastVoice.osc2) { try { bassLastVoice.osc2.stop(audioCtx.currentTime + 0.1); } catch(e){} }
       bassLastVoice = null;
     }
     // All notes off MIDI
@@ -2323,7 +2340,7 @@
     if (bassLastVoice) {
       try { bassLastVoice.gain.gain.setTargetAtTime(0.0001, now, 0.02); } catch(e){}
       try { bassLastVoice.osc1.stop(now + 0.1); } catch(e){}
-      try { bassLastVoice.osc2.stop(now + 0.1); } catch(e){}
+      if (bassLastVoice.osc2) { try { bassLastVoice.osc2.stop(now + 0.1); } catch(e){} }
       bassLastVoice = null;
     }
     // Registra in loop se rec attivo
@@ -3068,6 +3085,9 @@
   function playBassOffline(ctx, chain, time, p) {
     const freq = noteToFreq(p.note);
     const subFreq = freq / 2;
+    // Sub disabled below C2 to prevent inaudible rumble that beats with the kick fundamental
+    const noteMidi = noteToMidi(p.note);
+    const useSub = noteMidi >= 36;
     const accent = !!p.accent;
     const velBase = Math.max(0.05, Math.min(1, p.vel));
     const peakGain = velBase * (accent ? 1.2 : 1.0);
@@ -3075,12 +3095,19 @@
     const osc1 = ctx.createOscillator();
     osc1.type = 'sawtooth';
     osc1.frequency.setValueAtTime(freq, time);
-    const osc2 = ctx.createOscillator();
-    osc2.type = 'square';
-    osc2.frequency.setValueAtTime(subFreq, time);
 
-    const mix1 = ctx.createGain(); mix1.gain.value = 0.7;
-    const mix2 = ctx.createGain(); mix2.gain.value = 0.3;
+    let osc2 = null;
+    let mix2 = null;
+    if (useSub) {
+      osc2 = ctx.createOscillator();
+      osc2.type = 'square';
+      osc2.frequency.setValueAtTime(subFreq, time);
+      mix2 = ctx.createGain();
+      mix2.gain.value = 0.3;
+    }
+
+    const mix1 = ctx.createGain();
+    mix1.gain.value = useSub ? 0.7 : 1.0;
 
     const gate = ctx.createGain();
     gate.gain.setValueAtTime(0.0001, time);
@@ -3111,11 +3138,15 @@
     f.setTargetAtTime(baseHz, releaseAt, 0.05);
 
     osc1.connect(mix1).connect(gate);
-    osc2.connect(mix2).connect(gate);
+    if (osc2 && mix2) osc2.connect(mix2).connect(gate);
     gate.connect(chain.input);
 
-    osc1.start(time); osc2.start(time);
-    osc1.stop(releaseAt + 0.12); osc2.stop(releaseAt + 0.12);
+    osc1.start(time);
+    osc1.stop(releaseAt + 0.12);
+    if (osc2) {
+      osc2.start(time);
+      osc2.stop(releaseAt + 0.12);
+    }
   }
 
   /** AudioBuffer -> WAV 16-bit PCM */
