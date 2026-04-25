@@ -276,16 +276,11 @@
 
     bassBus = audioCtx.createGain();
     bassBus.gain.value = bassBusLevel;
-    // Safety-net compressor sul bass bus. Settings morbidi (threshold -3 dB,
-    // ratio 2:1, attack 5 ms): lavora solo sui veri picchi accent senza
-    // pumping percepibile sui transient successivi.
-    bassBusComp = audioCtx.createDynamicsCompressor();
-    bassBusComp.threshold.value = -3;
-    bassBusComp.ratio.value = 2;
-    bassBusComp.attack.value = 0.005;
-    bassBusComp.release.value = 0.1;
-    bassBusComp.knee.value = 12;
-    bassBus.connect(bassBusComp).connect(masterGain);
+    // Niente compressore sul bass bus: il synth ha dinamica già controllata
+    // (peakGain = velBase * accent, range determinato 0.05-1.2). Comprimere
+    // qui significa squashare il sustain dopo i transient accent — peggiora
+    // note lunghe (trap F2 length 0.85, funk slap accent).
+    bassBus.connect(masterGain);
 
     // Rumore bianco pregenerato, condiviso
     const len = audioCtx.sampleRate * 2;
@@ -710,16 +705,12 @@
 
     const freq = noteToFreq(p.note);
     const subFreq = freq / 2; // -12 st = sub-ottava
-    // Sub fades out from C2 to C1 to avoid kick beating while preserving timbre continuity
-    //   noteMidi >= 36 (>= C2)               -> subRatio 1.0 (sub al 100%)
-    //   noteMidi <= 24 (<= C1)               -> subRatio 0   (sub off)
-    //   24 < noteMidi < 36 (tra C1 e C2)     -> crossfade lineare
+    // Hard cutoff a C2 (MIDI 36): sotto questa soglia il sub a -12 st scende
+    // sotto 33 Hz e interferisce con la fondamentale del kick (~40-45 Hz),
+    // creando battimenti percepiti come 'stonatura'. Isolamento spettrale
+    // pulito > continuità timbrica teorica del crossfade.
     const noteMidi = noteToMidi(p.note);
-    let subRatio;
-    if (noteMidi <= 24) subRatio = 0;
-    else if (noteMidi >= 36) subRatio = 1;
-    else subRatio = (noteMidi - 24) / 12;
-    const useSub = subRatio > 0;
+    const useSub = noteMidi >= 36;
 
     const accent = !!p.accent;
     const velBase = Math.max(0.05, Math.min(1, p.vel));
@@ -767,13 +758,13 @@
       return v;
     }
 
-    // Nuova voce. Detune random ±1 cent per evitare phase-stack tra note
-    // ripetute identiche (chorus involontario). 1 cent è inudibile come pitch
-    // shift ma rompe la sovrapposizione di fase responsabile dei picchi.
+    // Nuova voce. Niente detune: il bass è monofonico, le voci non si
+    // sovrappongono mai (la precedente è chiusa al trigger della successiva
+    // tranne in slide), quindi non c'è rischio di phase-stack. Pitch lock
+    // assoluto = bass più "stabile" e definito.
     const osc1 = audioCtx.createOscillator();
     osc1.type = 'sawtooth';
     osc1.frequency.setValueAtTime(freq, time);
-    osc1.detune.value = (Math.random() - 0.5) * 2; // ±1 cent
 
     let osc2 = null;
     let mixSub = null;
@@ -781,16 +772,14 @@
       osc2 = audioCtx.createOscillator();
       osc2.type = 'square';
       osc2.frequency.setValueAtTime(subFreq, time);
-      osc2.detune.value = (Math.random() - 0.5) * 2; // ±1 cent
     }
 
-    // Mixer 70/30 con compensazione lineare quando il sub fa crossfade.
-    // Energia totale costante: saw + sub*subRatio = 1.0 in qualunque punto.
+    // Mixer 70/30 quando il sub è attivo, 100/0 quando off.
     const mixSaw = audioCtx.createGain();
-    mixSaw.gain.value = 1.0 - 0.3 * subRatio;
+    mixSaw.gain.value = useSub ? 0.7 : 1.0;
     if (useSub) {
       mixSub = audioCtx.createGain();
-      mixSub.gain.value = 0.3 * subRatio;
+      mixSub.gain.value = 0.3;
     }
 
     // Envelope di ampiezza: A 3ms, D=len*stepDur, S 0.7, R 60ms
@@ -2841,20 +2830,13 @@
       master.gain.value = 0.75;
       master.connect(ctx.destination);
 
-      // Bus drum e bass anche nell'offline, così i master level e il
-      // compressore safety-net sul basso sono rispettati nel bounce.
+      // Bus drum e bass nell'offline, allineati al runtime (no compressor).
       const drumBusOff = ctx.createGain();
       drumBusOff.gain.value = drumBusLevel;
       drumBusOff.connect(master);
       const bassBusOff = ctx.createGain();
       bassBusOff.gain.value = bassBusLevel;
-      const bassBusOffComp = ctx.createDynamicsCompressor();
-      bassBusOffComp.threshold.value = -3;
-      bassBusOffComp.ratio.value = 2;
-      bassBusOffComp.attack.value = 0.005;
-      bassBusOffComp.release.value = 0.1;
-      bassBusOffComp.knee.value = 12;
-      bassBusOff.connect(bassBusOffComp).connect(master);
+      bassBusOff.connect(master);
 
       const len = sr;
       const noise = ctx.createBuffer(1, len, sr);
@@ -3115,18 +3097,13 @@
     return { panner: pan, filter: filt, drive: drv, gain: g, input: pan || filt };
   }
 
-  /** Suona una nota bass in offline. Replica le stesse rifiniture timbriche
-      del runtime: detune ±1 cent, sub crossfade C2→C1. */
+  /** Suona una nota bass in offline. Replica fedelmente la sintesi runtime:
+      hard cutoff sub a C2, niente detune, niente compressore. */
   function playBassOffline(ctx, chain, time, p) {
     const freq = noteToFreq(p.note);
     const subFreq = freq / 2;
-    // Sub fades out from C2 to C1 to avoid kick beating while preserving timbre continuity
     const noteMidi = noteToMidi(p.note);
-    let subRatio;
-    if (noteMidi <= 24) subRatio = 0;
-    else if (noteMidi >= 36) subRatio = 1;
-    else subRatio = (noteMidi - 24) / 12;
-    const useSub = subRatio > 0;
+    const useSub = noteMidi >= 36; // hard cutoff a C2
     const accent = !!p.accent;
     const velBase = Math.max(0.05, Math.min(1, p.vel));
     const peakGain = velBase * (accent ? 1.2 : 1.0);
@@ -3134,7 +3111,6 @@
     const osc1 = ctx.createOscillator();
     osc1.type = 'sawtooth';
     osc1.frequency.setValueAtTime(freq, time);
-    osc1.detune.value = (Math.random() - 0.5) * 2; // ±1 cent
 
     let osc2 = null;
     let mix2 = null;
@@ -3142,13 +3118,12 @@
       osc2 = ctx.createOscillator();
       osc2.type = 'square';
       osc2.frequency.setValueAtTime(subFreq, time);
-      osc2.detune.value = (Math.random() - 0.5) * 2; // ±1 cent
       mix2 = ctx.createGain();
-      mix2.gain.value = 0.3 * subRatio;
+      mix2.gain.value = 0.3;
     }
 
     const mix1 = ctx.createGain();
-    mix1.gain.value = 1.0 - 0.3 * subRatio;
+    mix1.gain.value = useSub ? 0.7 : 1.0;
 
     const gate = ctx.createGain();
     gate.gain.setValueAtTime(0.0001, time);
