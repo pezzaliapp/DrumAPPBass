@@ -12,7 +12,7 @@
       "volume": 0.9,
       "mute": false,
       "solo": false,
-      "pitch": -4,
+      "pitch": 0,
       "decay": 1.6,
       "filterType": "off",
       "filterCutoff": 0.7,
