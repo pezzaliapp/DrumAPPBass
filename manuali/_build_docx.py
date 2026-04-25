@@ -70,10 +70,77 @@ style_heading(3, BASS, 13)
 style_heading(4, INK, 12)
 
 # Helper: page break
+#
+# Attacca il break al paragrafo precedente invece di crearne uno nuovo
+# vuoto: se il contenuto precedente riempie la pagina al pixel, un
+# paragrafo-break orfano in coda viene spinto da LibreOffice sulla pagina
+# successiva, dove il break interno spinge il contenuto su quella ancora
+# dopo — risultato: pagina bianca in mezzo al documento. Inserendo il
+# break dentro l'ultima run del paragrafo precedente, il "salto" è parte
+# del flusso di quel paragrafo e non genera mai una pagina orfana.
 def page_break():
+    body = doc.element.body
+    last_p = None
+    for child in reversed(list(body)):
+        if child.tag == qn('w:p'):
+            last_p = child
+            break
+        if child.tag == qn('w:tbl'):
+            break  # ultimo blocco è una tabella: usa fallback
+    if last_p is not None:
+        existing = [b for b in last_p.findall(f'.//{qn("w:br")}')
+                    if b.get(qn('w:type')) == 'page']
+        if not existing:
+            run = OxmlElement('w:r')
+            br = OxmlElement('w:br')
+            br.set(qn('w:type'), 'page')
+            run.append(br)
+            last_p.append(run)
+            return
     p = doc.add_paragraph()
     run = p.add_run()
     run.add_break(WD_BREAK.PAGE)
+
+
+# Safety net: se per qualunque motivo dovessero comparire paragrafi
+# vuoti che contengono solo un page break (es. break consecutivi), li
+# fondiamo nel paragrafo precedente per evitare pagine bianche.
+def compact_orphan_breaks(doc):
+    body = doc.element.body
+    children = list(body)
+    removed = 0
+    for i, el in enumerate(children):
+        if el.tag != qn('w:p'):
+            continue
+        text = ''.join((t.text or '') for t in el.iter(qn('w:t')))
+        page_breaks = [b for b in el.findall(f'.//{qn("w:br")}')
+                       if b.get(qn('w:type')) == 'page']
+        if text.strip() != '' or not page_breaks:
+            continue
+        prev = None
+        for j in range(i - 1, -1, -1):
+            if children[j].tag == qn('w:p'):
+                prev = children[j]
+                break
+            if children[j].tag == qn('w:tbl'):
+                break
+        if prev is None:
+            continue
+        prev_has_pb = any(
+            b.get(qn('w:type')) == 'page'
+            for b in prev.findall(f'.//{qn("w:br")}')
+        )
+        if prev_has_pb:
+            continue
+        run = OxmlElement('w:r')
+        br = OxmlElement('w:br')
+        br.set(qn('w:type'), 'page')
+        run.append(br)
+        prev.append(run)
+        el.getparent().remove(el)
+        removed += 1
+    if removed:
+        print(f'compact_orphan_breaks: fusi {removed} paragrafi-break orfani')
 
 # Helper: heading with text
 def H1(text):
@@ -1487,6 +1554,9 @@ settings_el = doc.settings.element
 update_fields = OxmlElement('w:updateFields')
 update_fields.set(qn('w:val'), 'true')
 settings_el.append(update_fields)
+
+# Safety net contro pagine bianche da break orfani
+compact_orphan_breaks(doc)
 
 # Save
 doc.save(OUT)
