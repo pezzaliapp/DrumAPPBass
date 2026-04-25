@@ -113,7 +113,7 @@
   //      └── bassBus ← bassGain
   let drumBus = null;
   let bassBus = null;
-  let bassBusComp = null;   // safety-net compressor sulla somma del basso
+  let bassBusHP = null;     // high-pass 30 Hz: rimuove qualsiasi rumble sub-audio
   let drumBusLevel = 0.9;   // master drum 0-1 (default 0.9)
   let bassBusLevel = 0.8;   // master bass 0-1 (default 0.8)
 
@@ -276,11 +276,15 @@
 
     bassBus = audioCtx.createGain();
     bassBus.gain.value = bassBusLevel;
-    // Niente compressore sul bass bus: il synth ha dinamica già controllata
-    // (peakGain = velBase * accent, range determinato 0.05-1.2). Comprimere
-    // qui significa squashare il sustain dopo i transient accent — peggiora
-    // note lunghe (trap F2 length 0.85, funk slap accent).
-    bassBus.connect(masterGain);
+    // High-pass 30 Hz: rimuove qualsiasi residuo sub-audio (sub osc, transient
+    // del drive, rumble). Tutti gli speaker consumer tagliano sotto 50-80 Hz,
+    // quindi 30 Hz è sotto la zona udibile reale. Pulisce il low end senza
+    // toccare il fundamental del basso (E1 = 41 Hz, già sopra la cutoff).
+    bassBusHP = audioCtx.createBiquadFilter();
+    bassBusHP.type = 'highpass';
+    bassBusHP.frequency.value = 30;
+    bassBusHP.Q.value = 0.707; // Butterworth, no resonance peak
+    bassBus.connect(bassBusHP).connect(masterGain);
 
     // Rumore bianco pregenerato, condiviso
     const len = audioCtx.sampleRate * 2;
@@ -794,13 +798,16 @@
     // release
     gate.gain.setTargetAtTime(0.0001, releaseAt, 0.03);
 
-    // Envelope del filtro: attack 2 ms, decay dal parametro, sustain 0, release 50 ms
-    // Il cutoff base è bassParams.cutoff mappato 50Hz..5kHz.
-    // envAmount [-1..+1] modula (in positivo il filtro si apre fino a ~6 kHz oltre il base)
+    // Envelope del filtro: attack 2 ms, decay dal parametro, sustain 0, release 50 ms.
+    // Filter env amount SCALATO per velocity (e doppiato dall'accent), come fa
+    // ogni synth analogico vero (Moog, Roland, Korg). Ghost notes si aprono
+    // poco = suono morbido. Accent si aprono molto = suono brillante. È la
+    // dinamica timbrica che trasforma un pattern 'piatto' in groove vivo.
     const baseHz = 50 * Math.pow(100, bassParams.cutoff);
+    const envScale = velBase * (accent ? 2 : 1);
     const envMax = bassParams.envAmount >= 0
-      ? baseHz + bassParams.envAmount * 4500 * (accent ? 2 : 1)
-      : baseHz + bassParams.envAmount * (baseHz - 50) * (accent ? 2 : 1);
+      ? baseHz + bassParams.envAmount * 4500 * envScale
+      : baseHz + bassParams.envAmount * (baseHz - 50) * envScale;
     const envMaxClamped = Math.max(40, Math.min(8000, envMax));
     const decaySec = Math.max(0.06, Math.min(0.8, bassParams.decay / 1000));
 
@@ -2830,13 +2837,17 @@
       master.gain.value = 0.75;
       master.connect(ctx.destination);
 
-      // Bus drum e bass nell'offline, allineati al runtime (no compressor).
+      // Bus drum e bass nell'offline, allineati al runtime: HP 30 Hz su bass.
       const drumBusOff = ctx.createGain();
       drumBusOff.gain.value = drumBusLevel;
       drumBusOff.connect(master);
       const bassBusOff = ctx.createGain();
       bassBusOff.gain.value = bassBusLevel;
-      bassBusOff.connect(master);
+      const bassBusOffHP = ctx.createBiquadFilter();
+      bassBusOffHP.type = 'highpass';
+      bassBusOffHP.frequency.value = 30;
+      bassBusOffHP.Q.value = 0.707;
+      bassBusOff.connect(bassBusOffHP).connect(master);
 
       const len = sr;
       const noise = ctx.createBuffer(1, len, sr);
@@ -3134,10 +3145,12 @@
     gate.gain.setTargetAtTime(peakGain * 0.7, time + 0.04, 0.08);
     gate.gain.setTargetAtTime(0.0001, releaseAt, 0.03);
 
+    // Filter env scalato per velocity (parità col runtime)
     const baseHz = 50 * Math.pow(100, bassParams.cutoff);
+    const envScale = velBase * (accent ? 2 : 1);
     const envMax = bassParams.envAmount >= 0
-      ? baseHz + bassParams.envAmount * 4500 * (accent ? 2 : 1)
-      : baseHz + bassParams.envAmount * (baseHz - 50) * (accent ? 2 : 1);
+      ? baseHz + bassParams.envAmount * 4500 * envScale
+      : baseHz + bassParams.envAmount * (baseHz - 50) * envScale;
     const envMaxClamped = Math.max(40, Math.min(8000, envMax));
     const decaySec = Math.max(0.06, Math.min(0.8, bassParams.decay / 1000));
 
