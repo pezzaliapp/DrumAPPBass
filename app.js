@@ -231,6 +231,99 @@
   // ============================================================
   const SUPERSAW_DETUNES = [-10, -5, 0, 5, 10];           // cents
   const SUPERSAW_GAINS   = [0.147, 0.206, 0.294, 0.206, 0.147]; // sum = 1.0
+
+  // ============================================================
+  // PERFORMANCE MODES: scenari coerenti che riconfigurano
+  // architettura (n° voci, spread stereo, detune) e timbro
+  // (sub mix, drive, cutoff, env shape) insieme. Selettore
+  // singolo per UX semplice; ogni modalità è un "carattere"
+  // riconoscibile, non un tweak.
+  //
+  // CLASSIC = baseline Round 6 (back-compat). Le 5 demo storiche
+  // suonano in CLASSIC. Le 4 nuove demo dichiarano la propria
+  // modalità nel JSON via `performanceMode: "..."` al root.
+  // ============================================================
+  const PERFORMANCE_MODES = {
+    classic: {
+      label: 'CLASSIC',
+      desc: 'Mono supersaw · baseline Round 6',
+      detunes: [-10, -5, 0, 5, 10],
+      pans:    [   0,  0,  0, 0,  0],   // mono
+      gains:   [0.147, 0.206, 0.294, 0.206, 0.147],
+      subEnabled: true,
+      subMixRatio: 0.30,
+      sawMixRatio: 0.70,
+      subMidiThreshold: 36,             // C2
+      driveBoost: 1.0,
+      cutoffOffset: 0.0,
+      resonanceBoost: 1.0,
+      envAmountBoost: 1.0,
+      sustainLevel: 0.7,
+      attackSec: 0.003,
+      releaseSec: 0.03,
+    },
+    wide: {
+      label: 'WIDE',
+      desc: 'Stereo spread · 5 voci pannate ±100%',
+      detunes: [-18, -9, 0, 9, 18],
+      pans:    [-1.0, -0.5, 0, 0.5, 1.0],
+      gains:   [0.20, 0.20, 0.20, 0.20, 0.20], // egalitarie per "wash" stereo
+      subEnabled: true,
+      subMixRatio: 0.25,
+      sawMixRatio: 0.75,
+      subMidiThreshold: 36,
+      driveBoost: 0.85,
+      cutoffOffset: 0.05,
+      resonanceBoost: 0.9,
+      envAmountBoost: 0.9,
+      sustainLevel: 0.75,
+      attackSec: 0.005,
+      releaseSec: 0.06,
+    },
+    punch: {
+      label: 'PUNCH',
+      desc: 'Compatto · drive alto · decay rapido',
+      detunes: [-5, -2, 0, 2, 5],
+      pans:    [0, 0, 0, 0, 0],
+      gains:   [0.15, 0.20, 0.30, 0.20, 0.15],
+      subEnabled: true,
+      subMixRatio: 0.45,
+      sawMixRatio: 0.55,
+      subMidiThreshold: 36,
+      driveBoost: 1.5,
+      cutoffOffset: -0.05,
+      resonanceBoost: 1.1,
+      envAmountBoost: 1.1,
+      sustainLevel: 0.55,
+      attackSec: 0.004,
+      releaseSec: 0.025,
+    },
+    sub: {
+      label: 'SUB',
+      desc: 'Sub primario · 3 voci · drive forte',
+      detunes: [-5, 0, 5],            // 3 voci sole
+      pans:    [0, 0, 0],
+      gains:   [0.30, 0.40, 0.30],
+      subEnabled: true,
+      subMixRatio: 0.65,              // sub PRIMARIO
+      sawMixRatio: 0.35,
+      subMidiThreshold: 35,           // B1, soglia abbassata di un semitono
+      driveBoost: 1.6,
+      cutoffOffset: -0.10,
+      resonanceBoost: 1.2,
+      envAmountBoost: 1.0,
+      sustainLevel: 0.85,
+      attackSec: 0.005,
+      releaseSec: 0.08,
+    },
+  };
+  const PERFORMANCE_MODE_KEYS = ['classic', 'wide', 'punch', 'sub'];
+  /** Modalità performance corrente. Influenza playBassNote + playBassOffline. */
+  let performanceMode = 'classic';
+  function getPerfMode() {
+    return PERFORMANCE_MODES[performanceMode] || PERFORMANCE_MODES.classic;
+  }
+
   let bassSolo = () => bassParams.solo; // shortcut
 
   /** DOM cache bass */
@@ -405,12 +498,50 @@
     if (bassPanner) {
       bassPanner.pan.setTargetAtTime(bassParams.pan, audioCtx.currentTime, 0.02);
     }
-    bassFilter.Q.setTargetAtTime(bassParams.resonance, audioCtx.currentTime, 0.02);
-    bassDrive.curve = makeDriveCurve(bassParams.drive);
+    const m = getPerfMode();
+    bassFilter.Q.setTargetAtTime(bassParams.resonance * m.resonanceBoost, audioCtx.currentTime, 0.02);
+    const driveEff = Math.max(0, Math.min(1, bassParams.drive * m.driveBoost));
+    bassDrive.curve = makeDriveCurve(driveEff);
 
     // Se il drum passa in solo, dobbiamo anche silenziare il basso: il flag
     // bassParams.solo è indipendente, quindi il calcolo gain sopra già
     // gestisce "altri in solo + basso non in solo -> mute basso".
+  }
+
+  /** Cambia la modalità performance del basso e ricalibra la catena globale.
+      Chiude eventuale voce attiva per evitare crepe sul cambio detune/pan. */
+  function setPerformanceMode(key) {
+    if (!PERFORMANCE_MODES[key]) return;
+    if (performanceMode === key) {
+      // ridipingi solo l'UI
+      updatePerformanceModeButtons();
+      return;
+    }
+    performanceMode = key;
+    // Kill voce attiva: stack/sub successivi non si "scoprono" su detune diversi
+    if (audioCtx && bassLastVoice) {
+      const t = audioCtx.currentTime;
+      try { bassLastVoice.gain.gain.cancelScheduledValues(t); } catch(e){}
+      try { bassLastVoice.gain.gain.setTargetAtTime(0.0001, t, 0.01); } catch(e){}
+      for (const o of bassLastVoice.osc1Stack) {
+        try { o.stop(t + 0.05); } catch(e){}
+      }
+      if (bassLastVoice.osc2) { try { bassLastVoice.osc2.stop(t + 0.05); } catch(e){} }
+      bassLastVoice = null;
+    }
+    applyBassParams();
+    updatePerformanceModeButtons();
+  }
+
+  function updatePerformanceModeButtons() {
+    document.querySelectorAll('[data-perf-mode]').forEach(b => {
+      b.classList.toggle('bass-perf-btn--on', b.dataset.perfMode === performanceMode);
+    });
+    const lbl = document.getElementById('bassPerfDesc');
+    if (lbl) {
+      const m = getPerfMode();
+      lbl.textContent = m.desc;
+    }
   }
 
   function unlockAudio() {
@@ -719,12 +850,11 @@
 
     const freq = noteToFreq(p.note);
     const subFreq = freq / 2; // -12 st = sub-ottava
-    // Hard cutoff a C2 (MIDI 36): sotto questa soglia il sub a -12 st scende
-    // sotto 33 Hz e interferisce con la fondamentale del kick (~40-45 Hz),
-    // creando battimenti percepiti come 'stonatura'. Isolamento spettrale
-    // pulito > continuità timbrica teorica del crossfade.
+    // Hard cutoff sub di default a C2 (MIDI 36): sotto questa soglia il sub a
+    // -12 st scende sotto 33 Hz e interferisce con la fondamentale del kick
+    // (~40-45 Hz), creando battimenti. La soglia è sovrascritta dalla modalità
+    // performance attiva (es. SUB la abbassa a B1).
     const noteMidi = noteToMidi(p.note);
-    const useSub = noteMidi >= 36;
 
     const accent = !!p.accent;
     const velBase = Math.max(0.05, Math.min(1, p.vel));
@@ -779,72 +909,94 @@
       return v;
     }
 
-    // === SUPERSAW STACK: 5 saw detunate ±10c con gain normalizzato ===
-    // Le voci esterne (±10c) hanno gain inferiore, la centrale (0c) domina.
-    // Nessuna phase offset esplicita: le diverse frequenze effettive sfasano
-    // naturalmente nel tempo, creando il movimento del JP-8000 supersaw.
-    const osc1Stack = [];
+    // === SUPERSAW STACK secondo la modalità performance attiva ===
+    // CLASSIC: 5 voci mono ±10c (baseline Round 6).
+    // WIDE:    5 voci pannate ±100% con detune ±18c (stereo spread).
+    // PUNCH:   5 voci mono ±5c (compatto, weight centrale).
+    // SUB:     3 voci mono ±5c (stack ridotto per dominare il sub).
+    // Pan per voce: solo se il browser supporta StereoPannerNode e la
+    // modalità ha pan != 0 sulla voce. Altrimenti fallback mono.
+    const mode = getPerfMode();
+    const useSubMode = mode.subEnabled && noteMidi >= mode.subMidiThreshold;
+    const detunes = mode.detunes;
+    const pans    = mode.pans;
+    const gainsArr = mode.gains;
     const stackMix = audioCtx.createGain();
     stackMix.gain.value = 1.0;
-    for (let i = 0; i < SUPERSAW_DETUNES.length; i++) {
+    const osc1Stack = [];
+    for (let i = 0; i < detunes.length; i++) {
       const o = audioCtx.createOscillator();
       o.type = 'sawtooth';
       o.frequency.setValueAtTime(freq, time);
-      o.detune.value = SUPERSAW_DETUNES[i];
+      o.detune.value = detunes[i];
       const vGain = audioCtx.createGain();
-      vGain.gain.value = SUPERSAW_GAINS[i];
-      o.connect(vGain).connect(stackMix);
+      vGain.gain.value = gainsArr[i];
+      const wantsPan = pans[i] !== 0;
+      const vPan = (wantsPan && audioCtx.createStereoPanner) ? audioCtx.createStereoPanner() : null;
+      if (vPan) {
+        vPan.pan.value = pans[i];
+        o.connect(vGain).connect(vPan).connect(stackMix);
+      } else {
+        o.connect(vGain).connect(stackMix);
+      }
       osc1Stack.push(o);
     }
 
     let osc2 = null;
     let mixSub = null;
-    if (useSub) {
+    if (useSubMode) {
       osc2 = audioCtx.createOscillator();
       osc2.type = 'square';
       osc2.frequency.setValueAtTime(subFreq, time);
     }
 
-    // Mixer 70/30 quando il sub è attivo, 100/0 quando off.
+    // Mixer dipendente dalla modalità (saw vs sub ratio).
     const mixSaw = audioCtx.createGain();
-    mixSaw.gain.value = useSub ? 0.7 : 1.0;
-    if (useSub) {
+    mixSaw.gain.value = useSubMode ? mode.sawMixRatio : 1.0;
+    if (useSubMode) {
       mixSub = audioCtx.createGain();
-      mixSub.gain.value = 0.3;
+      mixSub.gain.value = mode.subMixRatio;
     }
 
-    // Envelope di ampiezza: A 3ms, D=len*stepDur, S 0.7, R 60ms
+    // Envelope di ampiezza con shape per modalità (attack, sustain, release).
+    const attackSec = mode.attackSec;
+    const sustainLv = mode.sustainLevel;
+    const releaseSec = mode.releaseSec;
     const gate = audioCtx.createGain();
     gate.gain.setValueAtTime(0.0001, time);
-    gate.gain.linearRampToValueAtTime(peakGain, time + 0.003);
+    gate.gain.linearRampToValueAtTime(peakGain, time + attackSec);
 
     const durationSec = Math.max(0.03, p.durationSec);
     const releaseAt = time + durationSec;
-    // decay a sustain
-    gate.gain.setTargetAtTime(peakGain * 0.7, time + 0.04, 0.08);
-    // release
-    gate.gain.setTargetAtTime(0.0001, releaseAt, 0.03);
+    // decay a sustain (target time 80 ms per smoothness, scalato leggermente)
+    gate.gain.setTargetAtTime(peakGain * sustainLv, time + Math.max(0.02, attackSec * 6), 0.08);
+    // release per modalità
+    gate.gain.setTargetAtTime(0.0001, releaseAt, releaseSec);
 
     // Envelope del filtro: attack 2 ms, decay dal parametro, sustain 0, release 50 ms.
     // Filter env amount SCALATO per velocity (e doppiato dall'accent), come fa
     // ogni synth analogico vero (Moog, Roland, Korg). Ghost notes si aprono
     // poco = suono morbido. Accent si aprono molto = suono brillante. È la
     // dinamica timbrica che trasforma un pattern 'piatto' in groove vivo.
-    const baseHz = 50 * Math.pow(100, bassParams.cutoff);
+    // cutoffOffset (modalità) shifta il base, envAmountBoost scala l'amount.
+    const cutoffEff = Math.max(0, Math.min(1, bassParams.cutoff + mode.cutoffOffset));
+    const baseHz = 50 * Math.pow(100, cutoffEff);
     const envScale = velBase * (accent ? 2 : 1);
-    const envMax = bassParams.envAmount >= 0
-      ? baseHz + bassParams.envAmount * 4500 * envScale
-      : baseHz + bassParams.envAmount * (baseHz - 50) * envScale;
+    const envAmountEff = bassParams.envAmount * mode.envAmountBoost;
+    const envMax = envAmountEff >= 0
+      ? baseHz + envAmountEff * 4500 * envScale
+      : baseHz + envAmountEff * (baseHz - 50) * envScale;
     const envMaxClamped = Math.max(40, Math.min(8000, envMax));
     const decaySec = Math.max(0.06, Math.min(0.8, bassParams.decay / 1000));
 
     // RESONANCE DYNAMICS: la Q del filter scala con velocity, accent e nota.
+    //   resonanceBoost (modalità): scala il base Q per timbro più o meno acceso.
     //   velQBoost: 0.5 + 0.5*vel  -> vel 0.05 ≈ 0.525, vel 1.0 = 1.0
     //   accent:    +30% Q sui colpi accentati (stile 303)
     //   rolloff:   sopra A2 (MIDI 45) abbassa la Q del 15% per ottava per
     //              evitare auto-oscillazione del Biquad LP sulle note alte
     //   clamp:     [0.5, 14] per safety (>15 il filtro auto-oscilla)
-    const baseQ = bassParams.resonance;
+    const baseQ = bassParams.resonance * mode.resonanceBoost;
     const velQBoost = 0.5 + 0.5 * velBase;
     const accentQBoost = accent ? 1.3 : 1.0;
     const noteRolloff = noteMidi > 45 ? Math.pow(0.85, (noteMidi - 45) / 12) : 1.0;
@@ -1138,7 +1290,7 @@
   // 9) UNDO / REDO
   // ============================================================
   function snapshot() {
-    // Salva pattern + trackParams + stato bass + master buses
+    // Salva pattern + trackParams + stato bass + master buses + perf mode
     return JSON.stringify({
       patterns,
       trackParams,
@@ -1147,6 +1299,7 @@
       bassLiveLoops,
       bassParams,
       bassMode,
+      performanceMode,
       masterDrum: drumBusLevel,
       masterBass: bassBusLevel,
     });
@@ -1172,6 +1325,9 @@
       if (s.bassLiveLoops) bassLiveLoops = s.bassLiveLoops;
       if (s.bassParams) bassParams = Object.assign({}, bassParams, s.bassParams);
       if (s.bassMode) bassMode = s.bassMode;
+      if (typeof s.performanceMode === 'string' && PERFORMANCE_MODES[s.performanceMode]) {
+        performanceMode = s.performanceMode;
+      }
       if (typeof s.masterDrum === 'number') drumBusLevel = s.masterDrum;
       if (typeof s.masterBass === 'number') bassBusLevel = s.masterBass;
       refreshAllUI();
@@ -1474,6 +1630,7 @@
     updateBassEditButtons();
     updateBassLooperCtlVisibility();
     updateBassParamPanel();
+    updatePerformanceModeButtons();
     updateAtFocus();
     updateBassHint();
   }
@@ -1753,12 +1910,18 @@
     { file: 'demo-ashleysroachclip.json', name: "Ashley's Roachclip",   bpm: 100, tag: 'classic', desc: '1974 · funky con open hat' },
     { file: 'demo-synthsub.json',         name: 'Synthetic Sub-style',  bpm:  91, tag: 'classic', desc: '1973 · sparso, spazio per voce' },
 
-    // 🎸 Demo drum+bass curate (v3) — 5 set astratti per genere
+    // 🎸 Demo drum+bass curate (v3) — 5 set astratti per genere (CLASSIC mode)
     { file: 'demo-bass-funk.json',    name: 'Funk Em + Bass',   bpm: 108, tag: 'bass', desc: 'E minor · slap-style con ghost notes, dialogo kick/basso' },
     { file: 'demo-bass-house.json',   name: 'House + Bass',     bpm: 124, tag: 'bass', desc: 'A minor 4/4 · tonica + slide alla dominante' },
     { file: 'demo-bass-onedrop.json', name: 'Reggae One-drop',  bpm:  80, tag: 'bass', desc: 'A minor · kick sul 3, bass con pause sacre' },
     { file: 'demo-bass-boombap.json', name: 'Boom Bap + Bass',  bpm:  90, tag: 'bass', desc: 'D minor swing 55 · tonica/terza/quinta' },
     { file: 'demo-bass-trap.json',    name: 'Trap 808 Bass',    bpm: 140, tag: 'bass', desc: 'F minor · sub lungo + slide, ratchet hats' },
+
+    // ⚡ Demo performance modes (Round 7) — una per ogni mode
+    { file: 'demo-bass-synthwave.json', name: 'Synthwave (CLASSIC)', bpm: 110, tag: 'perf', desc: 'B minor · drive notturno, baseline supersaw mono' },
+    { file: 'demo-bass-synthpop.json',  name: 'Synth-Pop (WIDE)',    bpm: 120, tag: 'perf', desc: 'C minor · stereo spread immersivo, ottave + slide' },
+    { file: 'demo-bass-neosoul.json',   name: 'Neo-Soul (PUNCH)',    bpm:  96, tag: 'perf', desc: 'F# minor swing 25 · ghost notes, dialogo serrato col kick' },
+    { file: 'demo-bass-dub.json',       name: 'Dub Rolling (SUB)',   bpm:  92, tag: 'perf', desc: 'G minor · sub primario, note lunghe one-drop' },
   ];
 
   function openDemos() {
@@ -1775,7 +1938,7 @@
         card.type = 'button';
         card.className = 'demo-card demo-card--' + d.tag;
         card.dataset.demo = d.file;
-        const icon = d.tag === 'classic' ? '🏛' : d.tag === 'iconic' ? '⭐' : d.tag === 'bass' ? '🎸' : '🎛';
+        const icon = d.tag === 'classic' ? '🏛' : d.tag === 'iconic' ? '⭐' : d.tag === 'bass' ? '🎸' : d.tag === 'perf' ? '⚡' : '🎛';
         card.innerHTML = `
           <div class="demo-card__head">
             <span class="demo-card__bpm">${d.bpm}</span>
@@ -2495,6 +2658,7 @@
       bpm, swing, patternLength, humanize,
       masterDrum: drumBusLevel,
       masterBass: bassBusLevel,
+      performanceMode,
       trackParams,
       patterns,
       songSequence,
@@ -2526,6 +2690,12 @@
     // Master buses (backward compat v1/v2: defaults)
     drumBusLevel = (typeof data.masterDrum === 'number') ? data.masterDrum : 0.9;
     bassBusLevel = (typeof data.masterBass === 'number') ? data.masterBass : 0.8;
+    // Performance mode (additivo a v3, fallback CLASSIC per file pre-Round 7).
+    if (typeof data.performanceMode === 'string' && PERFORMANCE_MODES[data.performanceMode]) {
+      performanceMode = data.performanceMode;
+    } else {
+      performanceMode = 'classic';
+    }
     if (Array.isArray(data.trackParams) && data.trackParams.length === NUM_TRACKS) {
       // Merge con default per backward compatibility (pan è recente)
       trackParams = data.trackParams.map(p => ({
@@ -3131,7 +3301,8 @@
     };
   }
 
-  /** Costruisce la catena bass nell'OfflineAudioContext (parallelo alla runtime) */
+  /** Costruisce la catena bass nell'OfflineAudioContext (parallelo alla runtime).
+      Il drive include il driveBoost della modalità attiva per parità col bounce. */
   function buildOfflineBassChain(ctx, master) {
     const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
     const filt = ctx.createBiquadFilter();
@@ -3140,7 +3311,9 @@
     filt.Q.value = bassParams.resonance;
 
     const drv = ctx.createWaveShaper();
-    drv.curve = makeDriveCurve(bassParams.drive);
+    const offlineMode = getPerfMode();
+    const offlineDrive = Math.max(0, Math.min(1, bassParams.drive * offlineMode.driveBoost));
+    drv.curve = makeDriveCurve(offlineDrive);
     drv.oversample = '2x';
 
     const g = ctx.createGain();
@@ -3159,29 +3332,40 @@
     return { panner: pan, filter: filt, drive: drv, gain: g, input: pan || filt };
   }
 
-  /** Suona una nota bass in offline. Replica fedelmente la sintesi runtime:
-      supersaw stack 5 voci, hard cutoff sub a C2, Q dinamica per nota. */
+  /** Suona una nota bass in offline. Replica fedelmente la sintesi runtime
+      con la performance mode attiva (parità col bounce WAV). */
   function playBassOffline(ctx, chain, time, p) {
     const freq = noteToFreq(p.note);
     const subFreq = freq / 2;
     const noteMidi = noteToMidi(p.note);
-    const useSub = noteMidi >= 36; // hard cutoff a C2
+    const mode = getPerfMode();
+    const useSub = mode.subEnabled && noteMidi >= mode.subMidiThreshold;
     const accent = !!p.accent;
     const velBase = Math.max(0.05, Math.min(1, p.vel));
     const peakGain = velBase * (accent ? 1.2 : 1.0);
 
-    // Stack supersaw 5 voci (parità col runtime)
+    // Stack supersaw secondo modalità (3 o 5 voci, pan per voce se WIDE)
     const osc1Stack = [];
     const stackMix = ctx.createGain();
     stackMix.gain.value = 1.0;
-    for (let i = 0; i < SUPERSAW_DETUNES.length; i++) {
+    const detunes = mode.detunes;
+    const pans    = mode.pans;
+    const gainsArr = mode.gains;
+    for (let i = 0; i < detunes.length; i++) {
       const o = ctx.createOscillator();
       o.type = 'sawtooth';
       o.frequency.setValueAtTime(freq, time);
-      o.detune.value = SUPERSAW_DETUNES[i];
+      o.detune.value = detunes[i];
       const vGain = ctx.createGain();
-      vGain.gain.value = SUPERSAW_GAINS[i];
-      o.connect(vGain).connect(stackMix);
+      vGain.gain.value = gainsArr[i];
+      const wantsPan = pans[i] !== 0;
+      const vPan = (wantsPan && ctx.createStereoPanner) ? ctx.createStereoPanner() : null;
+      if (vPan) {
+        vPan.pan.value = pans[i];
+        o.connect(vGain).connect(vPan).connect(stackMix);
+      } else {
+        o.connect(vGain).connect(stackMix);
+      }
       osc1Stack.push(o);
     }
 
@@ -3192,31 +3376,36 @@
       osc2.type = 'square';
       osc2.frequency.setValueAtTime(subFreq, time);
       mix2 = ctx.createGain();
-      mix2.gain.value = 0.3;
+      mix2.gain.value = mode.subMixRatio;
     }
 
     const mix1 = ctx.createGain();
-    mix1.gain.value = useSub ? 0.7 : 1.0;
+    mix1.gain.value = useSub ? mode.sawMixRatio : 1.0;
 
+    const attackSec = mode.attackSec;
+    const sustainLv = mode.sustainLevel;
+    const releaseSec = mode.releaseSec;
     const gate = ctx.createGain();
     gate.gain.setValueAtTime(0.0001, time);
-    gate.gain.linearRampToValueAtTime(peakGain, time + 0.003);
+    gate.gain.linearRampToValueAtTime(peakGain, time + attackSec);
 
     const durationSec = Math.max(0.03, p.durationSec);
     const releaseAt = time + durationSec;
-    gate.gain.setTargetAtTime(peakGain * 0.7, time + 0.04, 0.08);
-    gate.gain.setTargetAtTime(0.0001, releaseAt, 0.03);
+    gate.gain.setTargetAtTime(peakGain * sustainLv, time + Math.max(0.02, attackSec * 6), 0.08);
+    gate.gain.setTargetAtTime(0.0001, releaseAt, releaseSec);
 
     // Filter env scalato per velocity + Q dynamics (parità col runtime)
-    const baseHz = 50 * Math.pow(100, bassParams.cutoff);
+    const cutoffEff = Math.max(0, Math.min(1, bassParams.cutoff + mode.cutoffOffset));
+    const baseHz = 50 * Math.pow(100, cutoffEff);
     const envScale = velBase * (accent ? 2 : 1);
-    const envMax = bassParams.envAmount >= 0
-      ? baseHz + bassParams.envAmount * 4500 * envScale
-      : baseHz + bassParams.envAmount * (baseHz - 50) * envScale;
+    const envAmountEff = bassParams.envAmount * mode.envAmountBoost;
+    const envMax = envAmountEff >= 0
+      ? baseHz + envAmountEff * 4500 * envScale
+      : baseHz + envAmountEff * (baseHz - 50) * envScale;
     const envMaxClamped = Math.max(40, Math.min(8000, envMax));
     const decaySec = Math.max(0.06, Math.min(0.8, bassParams.decay / 1000));
 
-    const baseQ = bassParams.resonance;
+    const baseQ = bassParams.resonance * mode.resonanceBoost;
     const velQBoost = 0.5 + 0.5 * velBase;
     const accentQBoost = accent ? 1.3 : 1.0;
     const noteRolloff = noteMidi > 45 ? Math.pow(0.85, (noteMidi - 45) / 12) : 1.0;
@@ -3714,6 +3903,14 @@
     document.querySelectorAll('[data-bass-edit]').forEach(btn => {
       btn.addEventListener('click', () => setBassEditMode(btn.dataset.bassEdit));
     });
+    document.querySelectorAll('[data-perf-mode]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.perfMode;
+        setPerformanceMode(k);
+        const m = PERFORMANCE_MODES[k];
+        if (m) showToast(`PERF · ${m.label}`);
+      });
+    });
 
     const bassRecBtn = document.getElementById('bassRecBtn');
     if (bassRecBtn) bassRecBtn.addEventListener('click', bassArmRec);
@@ -3849,6 +4046,15 @@
       if (k === 'l') {
         setBassMode(bassMode === 'step' ? 'looper' : 'step');
         showToast(`BASS ${bassMode.toUpperCase()}`);
+        return;
+      }
+      if (k === 'p') {
+        // Cycle attraverso le 4 performance modes (CLASSIC → WIDE → PUNCH → SUB)
+        const idx = PERFORMANCE_MODE_KEYS.indexOf(performanceMode);
+        const next = PERFORMANCE_MODE_KEYS[(idx + 1) % PERFORMANCE_MODE_KEYS.length];
+        setPerformanceMode(next);
+        const m = PERFORMANCE_MODES[next];
+        showToast(`PERF · ${m.label}`);
         return;
       }
 

@@ -1181,6 +1181,14 @@ body::before {
   color: var(--bass);
 }
 
+.demo-card--perf {
+  background: linear-gradient(180deg, var(--paper-2) 0%, rgba(247,127,0,0.16) 100%);
+  border-color: #f77f00;
+}
+.demo-card--perf .demo-card__bpm {
+  color: #f77f00;
+}
+
 @media (max-width: 560px) {
   .demos__grid { grid-template-columns: 1fr 1fr; gap: 0.4rem; }
   .demo-card { padding: 0.55rem 0.6rem 0.65rem; }
@@ -1480,6 +1488,7 @@ body::before {
 
 .bass-panel__modes,
 .bass-panel__edits,
+.bass-panel__perf,
 .bass-panel__looperctl {
   display: flex;
   align-items: center;
@@ -1488,7 +1497,8 @@ body::before {
 }
 
 .bass-mode-btn,
-.bass-edit-btn {
+.bass-edit-btn,
+.bass-perf-btn {
   font-family: var(--f-display);
   font-size: 0.82rem;
   letter-spacing: 0.08em;
@@ -1509,10 +1519,22 @@ body::before {
   background: var(--bass);
   color: var(--paper);
 }
+/* PERF mode usa l'arancio brand (#f77f00) per distinguersi visivamente
+   da MODE/EDIT (blu basso): è un selettore di carattere globale, non
+   un toggle di workflow come STEP/LOOPER. */
+.bass-perf-btn--on {
+  background: #f77f00;
+  color: var(--ink);
+  border-color: var(--ink);
+}
 .bass-mode-btn:hover,
 .bass-edit-btn:hover {
   background: var(--bass-2);
   color: var(--paper);
+}
+.bass-perf-btn:hover {
+  background: #ffa133;
+  color: var(--ink);
 }
 
 /* ---- Griglia step bass ---- */
@@ -1757,7 +1779,7 @@ body::before {
   .bass-key--white { min-width: 30px; flex: 1 0 30px; }
   .bass-key--black { min-width: 22px; flex: 0 0 22px; min-height: 30px; }
   .bass-panel__head { gap: 0.3rem 0.5rem; }
-  .bass-mode-btn, .bass-edit-btn { padding: 3px 7px; font-size: 0.75rem; }
+  .bass-mode-btn, .bass-edit-btn, .bass-perf-btn { padding: 3px 7px; font-size: 0.75rem; }
 }
 
 /* Bass help section — accento blu */

@@ -7,7 +7,7 @@
      - skipWaiting + clients.claim -> aggiornamento immediato al deploy
    ============================================================== */
 
-const CACHE_NAME = 'drumappbass-v1';
+const CACHE_NAME = 'drumappbass-v2';
 
 // Asset locali precaricati all'install
 const CORE_ASSETS = [

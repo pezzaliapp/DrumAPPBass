@@ -166,6 +166,14 @@
           <button class="bass-mode-btn"                   data-bass-mode="looper" type="button">LOOPER</button>
         </div>
 
+        <div class="bass-panel__perf" title="Performance mode (P per ciclare)">
+          <span class="storage__label">PERF</span>
+          <button class="bass-perf-btn bass-perf-btn--on" data-perf-mode="classic" type="button" title="Mono supersaw, baseline Round 6">CLASSIC</button>
+          <button class="bass-perf-btn"                    data-perf-mode="wide"    type="button" title="Stereo spread 5 voci ±100%">WIDE</button>
+          <button class="bass-perf-btn"                    data-perf-mode="punch"   type="button" title="Compatto, drive alto, decay rapido">PUNCH</button>
+          <button class="bass-perf-btn"                    data-perf-mode="sub"     type="button" title="Sub primario, 3 voci, drive forte">SUB</button>
+        </div>
+
         <div class="bass-panel__edits" id="bassEditGroup">
           <span class="storage__label">EDIT</span>
           <button class="bass-edit-btn bass-edit-btn--on" data-bass-edit="note"  type="button">NOTE</button>
@@ -294,7 +302,7 @@
         <button class="chip chip--help" id="helpBtn" type="button" title="Guida (?)">?</button>
       </div>
       <div class="foot__shortcuts">
-        <kbd>SPACE</kbd> play · <kbd>T</kbd> tap · <kbd>1-4</kbd> pattern · <kbd>↑↓</kbd> traccia · <kbd>M</kbd>/<kbd>S</kbd> mute/solo · <kbd>C</kbd> clear · <kbd>B</kbd> bass · <kbd>L</kbd> step/looper · <kbd>⌘Z</kbd> undo
+        <kbd>SPACE</kbd> play · <kbd>T</kbd> tap · <kbd>1-4</kbd> pattern · <kbd>↑↓</kbd> traccia · <kbd>M</kbd>/<kbd>S</kbd> mute/solo · <kbd>C</kbd> clear · <kbd>B</kbd> bass · <kbd>L</kbd> step/looper · <kbd>P</kbd> perf · <kbd>⌘Z</kbd> undo
       </div>
       <div class="foot__meta">
         <span>PWA · Web Audio · Drum + Bass · No samples</span>
@@ -428,6 +436,14 @@
               <li><strong>CLEAR LOOP</strong> — svuota solo il loop live del pattern corrente.</li>
             </ul>
             <p><strong>Parametri bass track</strong> (premi <kbd>B</kbd> per mostrarli al posto dei drum): <strong>VOL · PAN · CUTOFF</strong> (50 Hz – 5 kHz) <strong>· RES</strong> (0.5–15) <strong>· ENV</strong> (−100..+100, mod del filtro) <strong>· DECAY</strong> env (60–800 ms) <strong>· DRIVE</strong> (WaveShaper 0–100%).</p>
+            <p><strong>PERF (Performance Mode)</strong> — selettore arancio nel pannello bass: cambia il <em>carattere globale</em> della sintesi su 4 scenari coerenti (architettura + timbro insieme). Shortcut <kbd>P</kbd> cycla.</p>
+            <ul class="help__list">
+              <li><strong>CLASSIC</strong> — mono · 5 voci supersaw ±10c · sub a -12 st al 30%. Baseline Round 6, suono bilanciato per quasi tutti i generi.</li>
+              <li><strong>WIDE</strong> — stereo spread · 5 voci pannate ±100% con detune ±18c. Carattere immersivo, ottimo per synth-pop / electro / synthwave dove il basso ha protagonismo melodico.</li>
+              <li><strong>PUNCH</strong> — mono compatto · 5 voci ±5c · drive ×1.5 · sub al 45% · decay rapido. Carattere asciutto e percussivo per funk / boom bap / hip-hop dirty.</li>
+              <li><strong>SUB</strong> — mono · 3 voci ±5c · sub al 65% (primario) · drive ×1.6 · soglia sub a B1. Carattere sub-heavy per dub / DnB / electronic rolling.</li>
+            </ul>
+            <p>Le demo dichiarano la propria modalità nel JSON v3 (<code>performanceMode</code> al root); i file pre-Round 7 (e le 5 demo bass storiche) caricano in CLASSIC per backward compat.</p>
             <p>Ogni pattern A/B/C/D ha il proprio step-bass <em>e</em> il proprio live-loop (4+4 slot indipendenti). Il basso è sincronizzato con swing, humanize e song mode. Ratchet/Prob/Nudge restano drum-only — il basso ha parametri suoi (accent/slide/length). Il basso è incluso nel BOUNCE WAV e nel REC live.</p>
             <p><strong>Routing MIDI</strong>: le note bass vengono inviate sul <strong>canale 2</strong>. I drum restano sul canale 10 GM standard.</p>
           </section>
@@ -456,7 +472,7 @@
               <span><kbd>↑</kbd> <kbd>↓</kbd> traccia</span>
               <span><kbd>M</kbd> mute · <kbd>S</kbd> solo</span>
               <span><kbd>C</kbd> clear · <kbd>D</kbd> demo</span>
-              <span><kbd>B</kbd> focus bass · <kbd>L</kbd> STEP/LOOPER</span>
+              <span><kbd>B</kbd> focus bass · <kbd>L</kbd> STEP/LOOPER · <kbd>P</kbd> perf mode</span>
               <span><kbd>R</kbd> rec loop <em>(in LOOPER)</em></span>
               <span><kbd>A</kbd>–<kbd>K</kbd> note bass <em>(in LOOPER)</em></span>
               <span><kbd>Z</kbd>/<kbd>X</kbd> ottava bass <em>(in LOOPER)</em></span>
