@@ -2,22 +2,23 @@
 
 Set di esempio importabili nell'app via il bottone **IMPORT** o **DEMOS**. Ognuno è pensato per dimostrare un **genere diverso** e le feature Pro che lo caratterizzano.
 
-Le **14 demo drum-only v2** originali di DrumAPP sono preservate integralmente e caricabili senza modifiche (il blocco bass viene inizializzato vuoto automaticamente). In più, **4 demo drum+bass v3 curate** esclusive di DrumAPPBass mostrano la sezione basso in azione.
+Le **14 demo drum-only v2** originali di DrumAPP sono preservate integralmente e caricabili senza modifiche (il blocco bass viene inizializzato vuoto automaticamente). In più, **5 demo drum+bass v3 curate** esclusive di DrumAPPBass mostrano la sezione basso in azione.
 
 ---
 
 ## 🎸 Demo drum+bass v3 (esclusive DrumAPPBass)
 
-Quattro set astratti per genere (non ricostruzioni di brani specifici), scritti con approccio da bassista: groove e bassline intenzionali, scelte armoniche esplicite, minimaliste quando il genere lo richiede.
+Cinque set astratti per genere (non ricostruzioni di brani specifici), scritti con approccio da bassista: groove e bassline intenzionali, scelte armoniche esplicite, dialogo kick/basso ritmicamente sfalsato per evitare mascheramento percettivo.
 
 | File | Genere / tonalità | BPM | Carattere |
 |---|---|---|---|
-| [`demo-bass-house.json`](demo-bass-house.json)     | House · **A minor**      | 124 | Four-on-the-floor: bassline sulla tonica A1 con accent sui 4 downbeat, slide di passaggio G2 → E2 a fine misura per tensione/release. |
-| [`demo-bass-onedrop.json`](demo-bass-onedrop.json) | Reggae one-drop · **A minor** |  80 | Kick SOLO sul 3 (one-drop), rimshot layered. Il basso reggae suona DOPO il kick, con pause strategiche sul down-beat. Niente drive, cutoff morbido. |
-| [`demo-bass-boombap.json`](demo-bass-boombap.json) | Hip-hop boom bap · **D minor** |  90 | Swing 55%, humanize on. Poche note: tonica D1, terza F1, quinta A1. Accent sul downbeat, hat 16th con ghost notes alternate. |
-| [`demo-bass-trap.json`](demo-bass-trap.json)       | Trap 808 · **F minor**     | 140 | Sub-bass lungo (length 0.95 sul downbeat). Ratchet 2×/3× sui closed hat. Cutoff basso, decay lungo, drive moderato — lascia respirare il beat. |
+| [`demo-bass-funk.json`](demo-bass-funk.json)       | Funk slap · **E minor**       | 108 | Slap-style con ghost notes 16th, dialogo serrato kick/basso, humanize on. Note medio-acute (E1, B1, D2, E2, G1) sopra il sub problem zone. |
+| [`demo-bass-house.json`](demo-bass-house.json)     | House · **A minor**           | 124 | Four-on-the-floor: A1 sui downbeat 1/9 con kick allineato (pitch +4), pause su 5/13. Risposte E2/A2/G2 con slide. |
+| [`demo-bass-onedrop.json`](demo-bass-onedrop.json) | Reggae one-drop · **A minor** |  80 | Kick SOLO sul 3 (one-drop), basso melodico A1/C2/E2/G2 con silenzio totale sul drop. Niente drive, cutoff morbido. |
+| [`demo-bass-boombap.json`](demo-bass-boombap.json) | Hip-hop boom bap · **D minor** |  90 | Swing 55%, humanize on. D2 (octave up dal kick D1) sulla "one", F2/A2/C2 spaziose. Poche note, molto respiro. |
+| [`demo-bass-trap.json`](demo-bass-trap.json)       | Trap 808 · **F minor**        | 140 | Sub-bass in registro medio (F2/D#2/G#2/C3) — il peso 808 arriva da cutoff 0.32 + drive 0.30, non da note basse. Ratchet 2×/3× sui hat. |
 
-Per rigenerare programmaticamente questi file: `python3 _build_bass_demos.py`.
+Per rigenerare programmaticamente le 4 demo curate: `python3 _build_bass_demos.py` (la funk è importata come riferimento e non viene rigenerata).
 
 > ⚠️ Le basslines sono **composizioni originali per genere**, non copia di brani specifici. Note, groove e tonalità sono scelti per esemplificare la grammatica musicale comune di ogni stile.
 

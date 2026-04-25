@@ -1682,7 +1682,8 @@
     { file: 'demo-ashleysroachclip.json', name: "Ashley's Roachclip",   bpm: 100, tag: 'classic', desc: '1974 · funky con open hat' },
     { file: 'demo-synthsub.json',         name: 'Synthetic Sub-style',  bpm:  91, tag: 'classic', desc: '1973 · sparso, spazio per voce' },
 
-    // 🎸 Demo drum+bass curate (v3) — 4 set astratti per genere
+    // 🎸 Demo drum+bass curate (v3) — 5 set astratti per genere
+    { file: 'demo-bass-funk.json',    name: 'Funk Em + Bass',   bpm: 108, tag: 'bass', desc: 'E minor · slap-style con ghost notes, dialogo kick/basso' },
     { file: 'demo-bass-house.json',   name: 'House + Bass',     bpm: 124, tag: 'bass', desc: 'A minor 4/4 · tonica + slide alla dominante' },
     { file: 'demo-bass-onedrop.json', name: 'Reggae One-drop',  bpm:  80, tag: 'bass', desc: 'A minor · kick sul 3, bass con pause sacre' },
     { file: 'demo-bass-boombap.json', name: 'Boom Bap + Bass',  bpm:  90, tag: 'bass', desc: 'D minor swing 55 · tonica/terza/quinta' },
