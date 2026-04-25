@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""
+r"""
 Genera la versione .docx del manuale DrumAPPBass v1.0 a partire dalla
 struttura del manuale Markdown. Layout pulito con:
 - intestazioni numerate H1-H4
-- TOC pre-popolato in cima (elenco testuale H1-H3 generato a build,
-  visibile subito anche su lettori mobile che non aggiornano i campi)
+- TOC come campo Word (TOC \o "1-3" \h \z \u), popolato a build
+  da LibreOffice headless: hyperlink interni cliccabili e numeri di
+  pagina reali, visibili subito anche sui lettori mobile (nessun
+  F9 da premere)
 - page break tra sezioni principali
 - palette coerente con l'app: avorio #eae3d2 (sfondo blockquote),
   inchiostro #1a1a22 (testo), arancio #f77f00 (heading H1)
@@ -21,6 +23,8 @@ from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.oxml.ns import qn, nsmap
 from docx.oxml import OxmlElement
 import os
+import shutil
+import subprocess
 
 # Palette
 INK   = RGBColor(0x1A, 0x1A, 0x22)   # #1a1a22
@@ -71,31 +75,16 @@ def page_break():
     run = p.add_run()
     run.add_break(WD_BREAK.PAGE)
 
-# --- TOC pre-popolato (vedi insert_toc / populate_toc piu' sotto) ---
-# I lettori mobile (Pages iOS, Word Mobile aperti da WhatsApp) non
-# eseguono l'aggiornamento del campo TOC, quindi raccogliamo qui i
-# titoli H1-H3 mentre il documento viene costruito e a fine build li
-# scriviamo come elenco testuale al posto del placeholder.
-_toc_entries = []          # list of (level, text), riempita post-insert_toc()
-_toc_placeholder = None    # paragrafo da sostituire
-_toc_collect = False       # diventa True dopo insert_toc()
-
 # Helper: heading with text
 def H1(text):
-    if _toc_collect:
-        _toc_entries.append((1, text))
     h = doc.add_heading(text, level=1)
     return h
 
 def H2(text):
-    if _toc_collect:
-        _toc_entries.append((2, text))
     h = doc.add_heading(text, level=2)
     return h
 
 def H3(text):
-    if _toc_collect:
-        _toc_entries.append((3, text))
     h = doc.add_heading(text, level=3)
     return h
 
@@ -219,55 +208,30 @@ def table(headers, rows, col_widths=None):
                 row.cells[i].width = Cm(w)
     return t
 
-# Helper: TOC pre-popolato. Inserisce un paragrafo placeholder e abilita
-# la raccolta dei titoli H1-H3 successivi. populate_toc(), chiamata a fine
-# build, sostituisce il placeholder con un elenco testuale gerarchico.
-# Niente piu' campo dinamico TOC: il sommario e' visibile subito anche
-# su Pages iOS / Word Mobile (lettura del manuale da WhatsApp).
+# Helper: TOC come campo Word (TOC \o "1-3" \h \z \u). Subito dopo il
+# salvataggio, un passaggio LibreOffice headless apre il file e ne
+# aggiorna i campi: il TOC esce popolato con hyperlink interni e
+# numeri di pagina reali, leggibile su qualunque reader (Pages iOS,
+# Word Mobile, anteprima WhatsApp) senza bisogno di F9 / Update Field.
 def insert_toc():
-    global _toc_placeholder, _toc_collect
     p = doc.add_paragraph()
-    _toc_placeholder = p
-    _toc_collect = True
-    return p
-
-def populate_toc():
-    """Sostituisce il paragrafo placeholder creato da insert_toc() con
-    un elenco testuale dei titoli H1-H3 raccolti in _toc_entries.
-    Indentazione + colore differenziano i livelli; niente numeri di
-    pagina (sarebbero approssimativi senza un motore di rendering)."""
-    if _toc_placeholder is None or not _toc_entries:
-        return
-    placeholder = _toc_placeholder._p
-    parent = placeholder.getparent()
-    base_idx = list(parent).index(placeholder)
-
-    new_elements = []
-    for level, text in _toc_entries:
-        p = doc.add_paragraph()
-        if level == 1:
-            p.paragraph_format.space_before = Pt(6)
-            p.paragraph_format.space_after = Pt(2)
-            r = p.add_run(text)
-            r.bold = True; r.font.size = Pt(11.5); r.font.color.rgb = ORANGE
-        elif level == 2:
-            p.paragraph_format.left_indent = Cm(0.6)
-            p.paragraph_format.space_after = Pt(1)
-            r = p.add_run(text)
-            r.font.size = Pt(10.5); r.font.color.rgb = INK
-        else:  # level 3
-            p.paragraph_format.left_indent = Cm(1.2)
-            p.paragraph_format.space_after = Pt(1)
-            r = p.add_run(text)
-            r.font.size = Pt(10); r.font.color.rgb = GREY
-        new_elements.append(p._p)
-
-    # Sposta i nuovi paragrafi dalla fine del documento alla posizione
-    # del placeholder, poi rimuove il placeholder.
-    for i, el in enumerate(new_elements):
-        parent.remove(el)
-        parent.insert(base_idx + i, el)
-    parent.remove(placeholder)
+    run = p.add_run()
+    fldChar1 = OxmlElement('w:fldChar')
+    fldChar1.set(qn('w:fldCharType'), 'begin')
+    instrText = OxmlElement('w:instrText')
+    instrText.set(qn('xml:space'), 'preserve')
+    instrText.text = 'TOC \\o "1-3" \\h \\z \\u'
+    fldChar2 = OxmlElement('w:fldChar')
+    fldChar2.set(qn('w:fldCharType'), 'separate')
+    fldChar3 = OxmlElement('w:t')
+    fldChar3.text = 'Aggiorna l\'indice con F9 (Word) o Cmd+Opt+Shift+U (Mac)'
+    fldChar4 = OxmlElement('w:fldChar')
+    fldChar4.set(qn('w:fldCharType'), 'end')
+    run._r.append(fldChar1)
+    run._r.append(instrText)
+    run._r.append(fldChar2)
+    run._r.append(fldChar3)
+    run._r.append(fldChar4)
 
 # Helper: paragrafo con testo monospaziato inline (tasti tipo `B`)
 def Pkbd(text):
@@ -1517,10 +1481,123 @@ p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 r = p.add_run('— Alessandro Pezzali')
 r.italic = True; r.font.color.rgb = GREY; r.font.size = Pt(11)
 
-# Popola il TOC al posto del placeholder (vedi insert_toc/populate_toc)
-populate_toc()
+# Setta updateFields=true in word/settings.xml: cosi' al load
+# LibreOffice (e Word) sa di dover ricalcolare il TOC.
+settings_el = doc.settings.element
+update_fields = OxmlElement('w:updateFields')
+update_fields.set(qn('w:val'), 'true')
+settings_el.append(update_fields)
 
 # Save
 doc.save(OUT)
 print(f'wrote {OUT}')
 print(f'size: {os.path.getsize(OUT)} bytes')
+
+
+# ============================================================
+# POST-PROCESS: LibreOffice headless per popolare il campo TOC
+# ============================================================
+# python-docx scrive il TOC come field code, ma non lo "esegue":
+# se il file viene aperto su un reader mobile (Pages iOS, Word
+# Mobile, anteprima WhatsApp) il campo resta vuoto.
+#
+# `soffice --convert-to docx` da solo NON aggiorna i campi (anche
+# con updateFields=true) — bisogna chiamare esplicitamente
+# DocumentIndexes.update() via macro Basic. Un profilo LibreOffice
+# fresco e' troppo "freddo" per eseguire macro inline (richiede
+# bootstrap interattivo), quindi installiamo temporaneamente la
+# macro nel profilo utente esistente, la eseguiamo, e ripristiniamo
+# il Module1.xba originale a fine corsa.
+#
+# Risultato: il docx finale ha 80+ hyperlink interni cliccabili e
+# numeri di pagina reali, leggibili su Word, Pages iOS, Word Mobile.
+#
+# Se soffice non e' installato, lo script stampa un warning ma
+# NON fallisce: il docx esce con il TOC come campo non popolato.
+SOFFICE_CANDIDATES = [
+    'soffice',
+    'libreoffice',
+    '/opt/homebrew/bin/soffice',
+    '/usr/local/bin/soffice',
+    '/Applications/LibreOffice.app/Contents/MacOS/soffice',
+]
+
+def find_soffice():
+    for cand in SOFFICE_CANDIDATES:
+        path = shutil.which(cand) if '/' not in cand else (cand if os.path.exists(cand) else None)
+        if path:
+            return path
+    return None
+
+# Macro Basic: il path del docx e' bake-in via format() perche'
+# il passaggio di argomenti via `macro:///` URL non e' affidabile.
+TOC_MACRO_XBA_TEMPLATE = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="Module1" script:language="StarBasic">
+Sub Main
+    Dim sUrl As String
+    sUrl = "{file_url}"
+    Dim oArgs(0) As New com.sun.star.beans.PropertyValue
+    oArgs(0).Name = "Hidden"
+    oArgs(0).Value = True
+    Dim oDoc As Object
+    oDoc = StarDesktop.loadComponentFromURL(sUrl, "_blank", 0, oArgs())
+    Dim oIndexes As Object
+    oIndexes = oDoc.getDocumentIndexes()
+    Dim i As Integer
+    For i = 0 To oIndexes.getCount() - 1
+        oIndexes.getByIndex(i).update()
+    Next i
+    If oDoc.supportsService("com.sun.star.util.Refreshable") Then
+        oDoc.refresh()
+    End If
+    oDoc.store()
+    oDoc.close(True)
+End Sub
+</script:module>
+'''
+
+def lo_user_module_path():
+    """Path del Module1.xba della libreria Standard nel profilo utente."""
+    base = os.path.expanduser(
+        '~/Library/Application Support/LibreOffice/4/user/basic/Standard'
+    )
+    return os.path.join(base, 'Module1.xba')
+
+soffice = find_soffice()
+if not soffice:
+    print('warning: soffice/libreoffice non trovato, TOC non aggiornato')
+    print('         (apri il file in Word e premi F9 per popolare il TOC)')
+else:
+    module_path = lo_user_module_path()
+    if not os.path.exists(os.path.dirname(module_path)):
+        print('warning: profilo utente LibreOffice non trovato, TOC non aggiornato')
+        print('         (lancia LibreOffice almeno una volta e ri-esegui)')
+    else:
+        print(f'aggiorno TOC via {soffice} ...')
+        # Backup del Module1 originale, install macro, run, restore
+        backup_path = module_path + '.drumappbass.bak'
+        had_original = os.path.exists(module_path)
+        if had_original:
+            shutil.copy2(module_path, backup_path)
+        try:
+            file_url = 'file://' + OUT
+            with open(module_path, 'w') as f:
+                f.write(TOC_MACRO_XBA_TEMPLATE.format(file_url=file_url))
+            result = subprocess.run(
+                [soffice, '--headless', '--norestore', '--nofirststartwizard',
+                 '--nologo', '--nolockcheck',
+                 'macro:///Standard.Module1.Main'],
+                capture_output=True, text=True, timeout=180,
+            )
+            if result.returncode != 0:
+                print('warning: macro UpdateTOC ha restituito codice', result.returncode)
+            if result.stderr.strip():
+                # macOS produce un warning innocuo "Task policy set failed"
+                msg = result.stderr.strip()
+                if 'Task policy set failed' not in msg:
+                    print('  stderr:', msg)
+            print(f'TOC aggiornato — size: {os.path.getsize(OUT)} bytes')
+        finally:
+            if had_original:
+                shutil.move(backup_path, module_path)
