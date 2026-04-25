@@ -3,7 +3,8 @@
 Genera la versione .docx del manuale DrumAPPBass v1.0 a partire dalla
 struttura del manuale Markdown. Layout pulito con:
 - intestazioni numerate H1-H4
-- TOC automatico in cima (Word lo aggiorna a F9 / Update Field)
+- TOC pre-popolato in cima (elenco testuale H1-H3 generato a build,
+  visibile subito anche su lettori mobile che non aggiornano i campi)
 - page break tra sezioni principali
 - palette coerente con l'app: avorio #eae3d2 (sfondo blockquote),
   inchiostro #1a1a22 (testo), arancio #f77f00 (heading H1)
@@ -70,16 +71,31 @@ def page_break():
     run = p.add_run()
     run.add_break(WD_BREAK.PAGE)
 
+# --- TOC pre-popolato (vedi insert_toc / populate_toc piu' sotto) ---
+# I lettori mobile (Pages iOS, Word Mobile aperti da WhatsApp) non
+# eseguono l'aggiornamento del campo TOC, quindi raccogliamo qui i
+# titoli H1-H3 mentre il documento viene costruito e a fine build li
+# scriviamo come elenco testuale al posto del placeholder.
+_toc_entries = []          # list of (level, text), riempita post-insert_toc()
+_toc_placeholder = None    # paragrafo da sostituire
+_toc_collect = False       # diventa True dopo insert_toc()
+
 # Helper: heading with text
 def H1(text):
+    if _toc_collect:
+        _toc_entries.append((1, text))
     h = doc.add_heading(text, level=1)
     return h
 
 def H2(text):
+    if _toc_collect:
+        _toc_entries.append((2, text))
     h = doc.add_heading(text, level=2)
     return h
 
 def H3(text):
+    if _toc_collect:
+        _toc_entries.append((3, text))
     h = doc.add_heading(text, level=3)
     return h
 
@@ -203,26 +219,55 @@ def table(headers, rows, col_widths=None):
                 row.cells[i].width = Cm(w)
     return t
 
-# Helper: TOC field code (Word lo aggiorna premendo F9)
+# Helper: TOC pre-popolato. Inserisce un paragrafo placeholder e abilita
+# la raccolta dei titoli H1-H3 successivi. populate_toc(), chiamata a fine
+# build, sostituisce il placeholder con un elenco testuale gerarchico.
+# Niente piu' campo dinamico TOC: il sommario e' visibile subito anche
+# su Pages iOS / Word Mobile (lettura del manuale da WhatsApp).
 def insert_toc():
+    global _toc_placeholder, _toc_collect
     p = doc.add_paragraph()
-    run = p.add_run()
-    fldChar1 = OxmlElement('w:fldChar')
-    fldChar1.set(qn('w:fldCharType'), 'begin')
-    instrText = OxmlElement('w:instrText')
-    instrText.set(qn('xml:space'), 'preserve')
-    instrText.text = 'TOC \\o "1-3" \\h \\z \\u'
-    fldChar2 = OxmlElement('w:fldChar')
-    fldChar2.set(qn('w:fldCharType'), 'separate')
-    fldChar3 = OxmlElement('w:t')
-    fldChar3.text = 'Aggiorna l\'indice con F9 (Word) o Cmd+Opt+Shift+U (Mac)'
-    fldChar4 = OxmlElement('w:fldChar')
-    fldChar4.set(qn('w:fldCharType'), 'end')
-    run._r.append(fldChar1)
-    run._r.append(instrText)
-    run._r.append(fldChar2)
-    run._r.append(fldChar3)
-    run._r.append(fldChar4)
+    _toc_placeholder = p
+    _toc_collect = True
+    return p
+
+def populate_toc():
+    """Sostituisce il paragrafo placeholder creato da insert_toc() con
+    un elenco testuale dei titoli H1-H3 raccolti in _toc_entries.
+    Indentazione + colore differenziano i livelli; niente numeri di
+    pagina (sarebbero approssimativi senza un motore di rendering)."""
+    if _toc_placeholder is None or not _toc_entries:
+        return
+    placeholder = _toc_placeholder._p
+    parent = placeholder.getparent()
+    base_idx = list(parent).index(placeholder)
+
+    new_elements = []
+    for level, text in _toc_entries:
+        p = doc.add_paragraph()
+        if level == 1:
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(2)
+            r = p.add_run(text)
+            r.bold = True; r.font.size = Pt(11.5); r.font.color.rgb = ORANGE
+        elif level == 2:
+            p.paragraph_format.left_indent = Cm(0.6)
+            p.paragraph_format.space_after = Pt(1)
+            r = p.add_run(text)
+            r.font.size = Pt(10.5); r.font.color.rgb = INK
+        else:  # level 3
+            p.paragraph_format.left_indent = Cm(1.2)
+            p.paragraph_format.space_after = Pt(1)
+            r = p.add_run(text)
+            r.font.size = Pt(10); r.font.color.rgb = GREY
+        new_elements.append(p._p)
+
+    # Sposta i nuovi paragrafi dalla fine del documento alla posizione
+    # del placeholder, poi rimuove il placeholder.
+    for i, el in enumerate(new_elements):
+        parent.remove(el)
+        parent.insert(base_idx + i, el)
+    parent.remove(placeholder)
 
 # Helper: paragrafo con testo monospaziato inline (tasti tipo `B`)
 def Pkbd(text):
@@ -1471,6 +1516,9 @@ p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 r = p.add_run('— Alessandro Pezzali')
 r.italic = True; r.font.color.rgb = GREY; r.font.size = Pt(11)
+
+# Popola il TOC al posto del placeholder (vedi insert_toc/populate_toc)
+populate_toc()
 
 # Save
 doc.save(OUT)
