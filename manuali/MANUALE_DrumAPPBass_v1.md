@@ -9,7 +9,7 @@
 **Versione applicazione:** 1.0 (Round 7 — Performance Modes)
 **Data:** 25 aprile 2026
 **Autore:** Alessandro Pezzali — `pezzaliapp`
-**Sito:** [pezzaliapp.com](https://pezzaliapp.com) · [pezzaliapp.it](https://pezzaliapp.it)
+**Sito:** [pezzaliapp.com](https://pezzaliapp.com)
 **Repository:** [github.com/pezzaliapp/DrumAPPBass](https://github.com/pezzaliapp/DrumAPPBass)
 **App live:** [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/)
 **Licenza:** MIT
@@ -59,7 +59,7 @@ DrumAPPBass fa parte della serie **Weekend App — not Public**, una linea di ap
 
 La prima fase è una **anteprima riservata** alla community che segue l'autore su WhatsApp e sui canali social. Gli early adopter ricevono il link dell'applicazione insieme a questo manuale, possono usare l'app prima del rilascio pubblico e hanno un canale diretto per dare feedback e segnalare bug. Questo documento accompagna proprio questa fase.
 
-La seconda fase è il **rilascio pubblico** sui siti dell'autore (`pezzaliapp.com` e `pezzaliapp.it`) e sulle directory pubbliche di applicazioni web. La data del rilascio pubblico non è dichiarata in anticipo; dipende dal feedback raccolto in fase di anteprima e dal completamento di eventuali raffinamenti.
+La seconda fase è il **rilascio pubblico** sul sito dell'autore (`pezzaliapp.com`) e sulle directory pubbliche di applicazioni web. La data del rilascio pubblico non è dichiarata in anticipo; dipende dal feedback raccolto in fase di anteprima e dal completamento di eventuali raffinamenti.
 
 ### 1.4 A chi si rivolge
 
@@ -652,7 +652,7 @@ No, e non è prevista. La filosofia "vive nel browser" è un pilastro del proget
 
 - **App live:** [pezzaliapp.github.io/DrumAPPBass](https://pezzaliapp.github.io/DrumAPPBass/) — versione canonica, sempre aggiornata.
 - **Repository:** [github.com/pezzaliapp/DrumAPPBass](https://github.com/pezzaliapp/DrumAPPBass) — codice sorgente, demo, changelog.
-- **Sito autore:** [pezzaliapp.com](https://pezzaliapp.com) · [pezzaliapp.it](https://pezzaliapp.it)
+- **Sito autore:** [pezzaliapp.com](https://pezzaliapp.com)
 - **DrumAPP originale:** [github.com/pezzaliapp/DrumAPP](https://github.com/pezzaliapp/DrumAPP) — il progetto da cui DrumAPPBass è stato forkato.
 
 ### 13.2 Come dare feedback

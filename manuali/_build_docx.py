@@ -283,7 +283,7 @@ meta_rows = [
     ('Versione applicazione', '1.0 (Round 7 — Performance Modes)'),
     ('Data', '25 aprile 2026'),
     ('Autore', 'Alessandro Pezzali — pezzaliapp'),
-    ('Sito', 'pezzaliapp.com · pezzaliapp.it'),
+    ('Sito', 'pezzaliapp.com'),
     ('Repository', 'github.com/pezzaliapp/DrumAPPBass'),
     ('App live', 'pezzaliapp.github.io/DrumAPPBass'),
     ('Licenza', 'MIT'),
@@ -377,8 +377,8 @@ P(
 'feedback e segnalare bug. Questo documento accompagna proprio questa fase.'
 )
 P(
-'La seconda fase è il rilascio pubblico sui siti dell\'autore (pezzaliapp.com e '
-'pezzaliapp.it) e sulle directory pubbliche di applicazioni web. La data del rilascio '
+'La seconda fase è il rilascio pubblico sul sito dell\'autore (pezzaliapp.com) '
+'e sulle directory pubbliche di applicazioni web. La data del rilascio '
 'pubblico non è dichiarata in anticipo; dipende dal feedback raccolto in fase di anteprima '
 'e dal completamento di eventuali raffinamenti.'
 )
@@ -1276,7 +1276,7 @@ H1('13. Risorse, licenza e contatti')
 H2('13.1 Link')
 bullet('App live: pezzaliapp.github.io/DrumAPPBass — versione canonica, sempre aggiornata.')
 bullet('Repository: github.com/pezzaliapp/DrumAPPBass — codice sorgente, demo, changelog.')
-bullet('Sito autore: pezzaliapp.com · pezzaliapp.it')
+bullet('Sito autore: pezzaliapp.com')
 bullet('DrumAPP originale: github.com/pezzaliapp/DrumAPP — il progetto da cui DrumAPPBass è stato forkato.')
 
 H2('13.2 Come dare feedback')
