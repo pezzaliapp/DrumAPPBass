@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "exportedAt": "2026-04-24T21:15:11Z",
+  "exportedAt": "2026-04-25T04:03:56Z",
   "bpm": 140,
   "swing": 0,
   "patternLength": 16,
@@ -756,25 +756,26 @@
   ],
   "bass": {
     "trackParams": {
-      "volume": 0.78,
+      "volume": 0.74,
       "mute": false,
       "solo": false,
       "pan": 0.0,
-      "cutoff": 0.28,
+      "cutoff": 0.32,
       "resonance": 4.0,
       "envAmount": 0.65,
-      "decay": 400,
-      "drive": 0.35
+      "decay": 350,
+      "drive": 0.3
     },
     "patterns": {
       "A": [
         {
-          "note": "F1",
+          "note": "F2",
           "vel": 0.9,
-          "len": 0.95,
+          "len": 0.85,
           "accent": true,
           "slide": false
         },
+        null,
         null,
         null,
         null,
@@ -782,16 +783,15 @@
         null,
         {
           "note": "D#2",
-          "vel": 0.8,
-          "len": 0.5,
+          "vel": 0.75,
+          "len": 0.3,
           "accent": false,
           "slide": true
         },
-        null,
         {
-          "note": "G#1",
+          "note": "G#2",
           "vel": 0.85,
-          "len": 0.8,
+          "len": 0.65,
           "accent": true,
           "slide": false
         },
@@ -799,11 +799,17 @@
         null,
         null,
         null,
-        null,
         {
-          "note": "C2",
-          "vel": 0.75,
-          "len": 0.35,
+          "note": "F2",
+          "vel": 0.65,
+          "len": 0.3,
+          "accent": false,
+          "slide": false
+        },
+        {
+          "note": "C3",
+          "vel": 0.7,
+          "len": 0.25,
           "accent": false,
           "slide": false
         },
